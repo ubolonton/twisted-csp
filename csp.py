@@ -1,4 +1,6 @@
-from twisted.internet import reactor
+from twisted.internet import reactor as global_reactor
+
+import types
 
 # TODO: Pull out the parts specific to twisted's event loop, add
 # support for other event loops
@@ -10,6 +12,7 @@ FUNCTION = "fn"
 SPAWN = "spawn"
 QUIT = "quit"
 CALLBACKS = "callbacks"
+WAIT = "wait"
 
 
 # TODO: State object
@@ -52,10 +55,11 @@ class Channel:
 # FIX: This is so awkward
 NONE = object()
 class Process:
-    def __init__(self, gen):
+    def __init__(self, gen, reactor = global_reactor):
+        self.reactor = reactor
         self.gen = gen
-        self._done = False
         self.subprocesses = []
+        self._done = False
         self._next()
 
     def _next(self, message = NONE):
@@ -78,15 +82,13 @@ class Process:
 
     # FIX: This looks inefficient
     def _spin(self):
-        reactor.callLater(0, self.run)
+        self.reactor.callLater(0, self.run)
 
     def run(self):
         if self._done:
             return
 
-        # value = self.step
-        # print "value:", value
-        # type, do = self.value
+        # TODO: Some better name, not "do"
         type, do = self.step
 
         if type == CHANNEL:
@@ -97,6 +99,15 @@ class Process:
             self._spin()
             return
 
+        if type == WAIT:
+            seconds = do
+            def wake_up():
+                self._next()
+                self._spin()
+            self.reactor.callLater(seconds, wake_up)
+            return
+
+        # NOTE: Unused
         if type == CALLBACKS:
             def callback(message):
                 self._next(message)
@@ -107,17 +118,6 @@ class Process:
                 self.step = self.gen.throw(exception)
                 self._spin()
             do(callback, errback)
-            return
-
-        if type == FUNCTION:
-            # TODO: Change into callback/errback
-            def f(error, message):
-                if error:
-                    self.step = self.gen.throw(error)
-                else:
-                    self._next(message)
-                self._spin()
-            do(f)
             return
 
         if type == SPAWN:
@@ -132,17 +132,39 @@ class Process:
             self._spin()
 
 
-def spawn(f, *args, **kwargs):
+def spawn(f, args, kwargs, reactor = global_reactor):
     gen = f(*args, **kwargs)
-    process = Process(gen)
+    process = Process(gen, reactor)
     process.run()
     return SPAWN, process
 
 
-def process(f):
-    def wrapped(*args, **kwargs):
-        return spawn(f, *args, **kwargs)
-    return wrapped
+def process(reactor_or_f = global_reactor):
+    """
+    # Normal usage
+    @process
+    def foo():
+        yield csp.wait(0.5)
+        print (yield chan.take())
+
+    # When twisted supports non-global reactor
+    @process(custom_reactor)
+    def foo():
+        yield csp.wait(0.5)
+        print (yield chan.take())
+    """
+    if isinstance(reactor_or_f, types.FunctionType):
+        f = reactor_or_f
+        def wrapped(*args, **kwargs):
+            return spawn(f, args, kwargs, global_reactor)
+        return wrapped
+    else:
+        reactor = reactor_or_f
+        def decorator(f):
+            def wrapped(*args, **kwargs):
+                return spawn(f, args, kwargs, reactor)
+            return wrapped
+        return decorator
 
 
 # TODO: Support something like Clojure core.async's alts!
@@ -158,9 +180,7 @@ def select(*channels):
 
 
 def wait(seconds):
-    def do(callback, _):
-        reactor.callLater(seconds, callback, None)
-    return CALLBACKS, do
+    return WAIT, seconds
 
 
 # TODO
@@ -185,8 +205,3 @@ def chanify(fn):
 
 def quit():
     return QUIT, None
-
-
-def test(f, *args, **kwargs):
-    reactor.callWhenRunning(f, *args, **kwargs)
-    reactor.run()

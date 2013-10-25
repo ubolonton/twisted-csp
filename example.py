@@ -1,13 +1,14 @@
 # Quick and dirty convenient script to run the example
 import sys
-import os
 from twisted.internet import reactor
 
-def go(module):
+example = "example"
+
+def run_twisted_then_load(module):
     def start():
-        print "Running", module
-        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        __import__(module)
+        print "Running", "/".join([example, module])
+        print
+        __import__(example, fromlist=[module])
     reactor.callWhenRunning(start)
     reactor.run()
 
@@ -17,8 +18,4 @@ if __name__ == "__main__":
         print "Module name required"
         exit(1)
 
-    dirname = os.path.dirname(os.path.realpath(sys.argv[0]))
-    path = os.path.join(dirname, "example")
-    sys.path.insert(0, path)
-    go(args[0])
-    sys.path.pop(0)
+    run_twisted_then_load(args[0])

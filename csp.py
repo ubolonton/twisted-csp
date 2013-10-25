@@ -145,10 +145,11 @@ def process(f):
     return wrapped
 
 
+# TODO: Support something like Clojure core.async's alts!
 def select(*channels):
     def do():
         # TODO: This is prioritizing channel that is listed first. Is
-        # that desirable?
+        # that desirable? No. Randomize an order first then check!
         for channel in channels:
             if len(channel.buffer) > 0:
                 return CONTINUE, channel

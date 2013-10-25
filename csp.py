@@ -48,13 +48,12 @@ class Channel:
         return CHANNEL, do
 
 
-# FIX
+# FIX: This is so awkward
 NONE = object()
 class Process:
     def __init__(self, gen):
         self.gen = gen
-        # self.step = gen.next()
-        self.done = False
+        self._done = False
         self.subprocesses = []
         self._next()
 
@@ -65,18 +64,23 @@ class Process:
             else:
                 self.step = self.gen.send(message)
         except StopIteration:
-            self._finish()
+            self._stop()
 
-    def _finish(self):
+    def _stop(self):
+        if not self._done:
+            # TODO: Do we really want this? How about detaching
+            # subprocesses? Maybe this could be configurable
         for process in self.subprocesses:
-            process.done = True
+                process._stop()
+            self._done = True
+            print self, "stopped"
 
+    # FIX: This looks inefficient
     def _spin(self):
         reactor.callLater(0, self.run)
 
     def run(self):
-        if self.done:
-            self._finish()
+        if self._done:
             return
 
         # value = self.step
@@ -122,7 +126,8 @@ class Process:
             return
 
         if type == QUIT:
-            self.done = True
+            self._stop()
+            # TODO: Why spinning once more after stopping?
             self._spin()
 
 
@@ -141,8 +146,8 @@ def process(f):
 
 def select(*channels):
     def do():
-        # This is prioritizing channel that is listed first. Is that
-        # desirable?
+        # TODO: This is prioritizing channel that is listed first. Is
+        # that desirable?
         for channel in channels:
             if len(channel.buffer) > 0:
                 return CONTINUE, channel
@@ -150,14 +155,13 @@ def select(*channels):
     return CHANNEL, do
 
 
-# ?
 def wait(seconds):
     def do(callback, _):
         reactor.callLater(seconds, callback, None)
     return CALLBACKS, do
 
 
-# ?
+# TODO
 def wrap(fn):
     def wrapped(*args, **kwargs):
         def do(callback):
@@ -166,7 +170,7 @@ def wrap(fn):
     return wrapped
 
 
-# ?
+# TODO
 def chanify(fn):
     def f(channel, *args, **kwargs):
         def ff(error, message):

@@ -5,6 +5,7 @@ CHANNEL = "chan"
 FUNCTION = "fn"
 SPAWN = "spawn"
 QUIT = "quit"
+CALLBACKS = "callbacks"
 
 
 # TODO: State object
@@ -91,6 +92,18 @@ class Process:
             self._spin()
             return
 
+        if type == CALLBACKS:
+            def callback(message):
+                self._next(message)
+                self._spin()
+            def errback(failure):
+                # What if we don't unwrap?
+                exception = failure.value
+                self.step = self.gen.throw(exception)
+                self._spin()
+            do(callback, errback)
+            return
+
         if type == FUNCTION:
             # TODO: Change into callback/errback
             def f(error, message):
@@ -128,6 +141,8 @@ def process(f):
 
 def select(*channels):
     def do():
+        # This is prioritizing channel that is listed first. Is that
+        # desirable?
         for channel in channels:
             if len(channel.buffer) > 0:
                 return CONTINUE, channel
@@ -137,9 +152,9 @@ def select(*channels):
 
 # ?
 def wait(seconds):
-    def do(callback):
-        reactor.callLater(seconds, callback)
-    return FUNCTION, do
+    def do(callback, _):
+        reactor.callLater(seconds, callback, None)
+    return CALLBACKS, do
 
 
 # ?

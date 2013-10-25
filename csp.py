@@ -1,5 +1,9 @@
 from twisted.internet import reactor
 
+# TODO: Pull out the parts specific to twisted's event loop, add
+# support for other event loops
+
+
 # TODO: Instruction object
 CHANNEL = "chan"
 FUNCTION = "fn"
@@ -20,9 +24,6 @@ class Channel:
         self.buffer = []
         # What is drain?
         self.drain = False
-
-    # def ready(self):
-    #     return len(self.buffer) > 0
 
     def put(self, message):
         def do():
@@ -70,7 +71,7 @@ class Process:
         if not self._done:
             # TODO: Do we really want this? How about detaching
             # subprocesses? Maybe this could be configurable
-        for process in self.subprocesses:
+            for process in self.subprocesses:
                 process._stop()
             self._done = True
             print self, "stopped"

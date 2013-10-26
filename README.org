@@ -1,4 +1,34 @@
 This is a port of https://github.com/olahol/node-csp, with
-modification to suit Python and Twisted.
+modifications to suit Python and Twisted, and some improvements.
 
 Inspiration: http://swannodette.github.io/2013/08/24/es6-generators-and-csp
+
+Limitations (either fundamental to the approach, or of the implementation):
+
+- No "deep" yield. Therefore it is impossible to extract pieces of
+  logic that does channel communication without spawning a new process
+  (maybe python 3 ("yield from") will help?). This can reduce composability.
+- Cooperative multi-tasking.
+- Need a running event loop.
+- Channel's normal API cannot be used outside of a process (more
+  precisely outside of the generator function of a process). Another
+  set of API would be needed for that.
+
+#+begin_src python
+
+def foo(in, out):
+    v = yield in.take()
+    yield out.put(v)
+    # Do something else
+
+
+def send(in, out):
+    v = yield in.take()
+    yield chan2.put(v)
+
+
+def foo1(in, out):
+    process = yield csp.spawn(send, in, out)
+    yield csp.wait(process)
+
+#+end_src

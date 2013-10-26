@@ -1,8 +1,10 @@
 import csp
 
+
 chan1 = csp.Channel()
 chan2 = csp.Channel()
 quit = csp.Channel()
+
 
 @csp.process
 def one():
@@ -10,17 +12,20 @@ def one():
     print end - start, start, end
     yield chan1.put("one")
 
+
 @csp.process
 def two():
     start, end = yield csp.wait(0.5)
     print end - start, start, end
     yield chan2.put("two")
 
+
 @csp.process
 def q():
     start, end = yield csp.wait(0.5)
     print end - start, start, end
     yield quit.put(None)
+
 
 @csp.process
 def collector():

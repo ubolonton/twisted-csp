@@ -30,6 +30,7 @@ SLEEP = "sleep"
 
 
 # FIX: This is a stack (LIFO), channel must be queue (FIFO)
+# TODO: Add "close" functionality
 class Channel:
     # TODO: How about unbounded channel?
     def __init__(self, size = None):
@@ -156,6 +157,11 @@ def spawn(f, args, kwargs, reactor = global_reactor):
     process = Process(gen, reactor)
     process.run()
     return SPAWN, process
+
+
+# Hmm
+def go(f, *args, **kwargs):
+    return spawn(f, args, kwargs)
 
 
 def process(reactor_or_f = global_reactor):

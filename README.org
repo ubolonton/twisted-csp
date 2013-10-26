@@ -3,6 +3,13 @@ modifications to suit Python and Twisted, and some improvements.
 
 Inspiration: http://swannodette.github.io/2013/08/24/es6-generators-and-csp
 
+To run an example, use example.py script, like:
+#+begin_src shell
+python example.py blocking
+#+end_src
+Note that each example must be terminated manually since the event
+loop is still running after all the processes finish.
+
 Limitations (either fundamental to the approach, or of the implementation):
 
 - No "deep" yield. Therefore it is impossible to extract pieces of
@@ -13,7 +20,7 @@ Limitations (either fundamental to the approach, or of the implementation):
 - Channel's normal API cannot be used outside of a process (more
   precisely outside of the generator function of a process). Another
   set of API would be needed for that.
-- Forgetting to yield causes bug
+- Forgetting to yield causes bug.
 
 #+begin_src python
 import csp

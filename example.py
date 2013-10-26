@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Quick and dirty convenient script to run the example
 import sys
 from twisted.internet import reactor

@@ -6,17 +6,20 @@ quit = csp.Channel()
 
 @csp.process
 def one():
-    yield csp.wait(0.5)
+    start, end = yield csp.wait(0.5)
+    print end - start, start, end
     yield chan1.put("one")
 
 @csp.process
 def two():
-    yield csp.wait(0.5)
+    start, end = yield csp.wait(0.5)
+    print end - start, start, end
     yield chan2.put("two")
 
 @csp.process
 def q():
-    yield csp.wait(0.5)
+    start, end = yield csp.wait(0.5)
+    print end - start, start, end
     yield quit.put(None)
 
 @csp.process
@@ -29,6 +32,7 @@ def collector():
             print "2", (yield chan2.take())
         if chan is quit:
             print "quit", (yield quit.take())
+
 
 for process in (one, two, q, collector):
     process()

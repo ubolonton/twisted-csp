@@ -19,8 +19,8 @@ def player(name, table):
 def main():
     table = csp.Channel()
 
-    yield csp.go(player, "ping", table)
-    yield csp.go(player, "pong", table)
+    yield csp.go(player("ping", table))
+    yield csp.go(player("pong", table))
 
     yield table.put(Ball())
     yield csp.wait(1)

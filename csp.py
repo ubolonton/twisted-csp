@@ -92,7 +92,7 @@ class Process:
             self._done = True
             print self, "stopped"
 
-    # FIX: This looks inefficient
+    # FIX: This looks inefficient. Use callback instead of polling
     def _spin(self):
         self.reactor.callLater(0, self.run)
 
@@ -152,16 +152,19 @@ class Process:
             self._spin()
 
 
-def spawn(f, args, kwargs, reactor = global_reactor):
-    gen = f(*args, **kwargs)
+def go(gen, reactor = global_reactor):
+    """Takes a generator that generates instructions, run the
+    associated code in a pseudo-thread (lightweight process).
+    Returns a SPAWN instruction.
+    """
     process = Process(gen, reactor)
     process.run()
     return SPAWN, process
 
 
-# Hmm
-def go(f, *args, **kwargs):
-    return spawn(f, args, kwargs)
+def spawn(f, args, kwargs, reactor = global_reactor):
+    gen = f(*args, **kwargs)
+    return go(gen, reactor)
 
 
 def process(reactor_or_f = global_reactor):

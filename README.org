@@ -15,12 +15,16 @@ Limitations (either fundamental to the approach, or of the implementation):
 - No "deep" yield. Therefore it is impossible to extract pieces of
   logic that does channel communication without spawning a new process
   (maybe python 3 ("yield from") will help?). This can reduce composability.
-- Cooperative multi-tasking.
 - Need a running event loop.
 - Channel's normal API cannot be used outside of a process (more
   precisely outside of the generator function of a process). Another
   set of API would be needed for that.
-- Forgetting to yield causes bug.
+- Cooperative scheduling (usually this is not a big problem, except
+  when combined with the next point).
+- Forgetting to yield causes bug (value not being put on channel,
+  infinite loop blocking thread (Go/Clojure do not have this problem
+  because single syntactic units are used there, as opposed to "yield"
+  plus "function")).
 
 #+begin_src python
 import csp
@@ -39,7 +43,6 @@ def player(name, table):
         yield table.put(ball)
 
 
-@csp.process
 def main():
     table = csp.Channel()
 
@@ -49,7 +52,13 @@ def main():
     yield table.put(Ball())
     yield csp.wait(1)
 
-main()
+
+# Infinite loop, blocking threaod
+def processing(chan):
+    yield csp.wait(0.1)
+    while True:
+        # Forgot to yield => hold control indefinitely
+        chan.take()
 #+end_src
 
 

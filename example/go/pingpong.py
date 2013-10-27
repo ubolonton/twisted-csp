@@ -15,7 +15,7 @@ def player(name, table):
         yield table.put(ball)
 
 
-def main(*args):
+def main():
     table = csp.Channel()
 
     yield csp.go(player("ping", table))

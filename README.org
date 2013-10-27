@@ -3,9 +3,9 @@ modifications to suit Python and Twisted, and some improvements.
 
 Inspiration: http://swannodette.github.io/2013/08/24/es6-generators-and-csp
 
-To run an example, use the =run_example= script, like:
+To run an example, use the =run= script, like:
 #+begin_src shell
-./run_example.py blocking
+./run example.blocking
 #+end_src
 Note that each example must be terminated manually since the event
 loop is still running after all the processes finish.

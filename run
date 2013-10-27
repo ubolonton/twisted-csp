@@ -2,6 +2,7 @@
 # Quick and dirty convenient script to run the example
 import sys
 
+from twisted.python.reflect import namedModule
 from twisted.internet import reactor
 
 import csp
@@ -9,8 +10,9 @@ import csp
 
 def run_twisted_then_load(module_name):
     def start():
-        example = __import__("example", fromlist=[module_name])
-        module = getattr(example, module_name, None)
+        # example = __import__("example", fromlist=[module_name])
+        # module = getattr(example, module_name, None)
+        module = namedModule(module_name)
         if module is None:
             raise ImportError("No module named %s" % module_name)
         main = getattr(module, "main", None)

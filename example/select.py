@@ -27,8 +27,9 @@ def q():
     yield quit.put(None)
 
 
-@csp.process
-def collector():
+def main():
+    for process in (one, two, q,):
+        process()
     while True:
         chan = yield csp.select(chan1, chan2, quit)
         if chan is chan1:
@@ -37,7 +38,3 @@ def collector():
             print "2", (yield chan2.take())
         if chan is quit:
             print "quit", (yield quit.take())
-
-
-for process in (one, two, q, collector):
-    process()

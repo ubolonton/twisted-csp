@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+# Quick and dirty convenient script to run the example
+import sys
+
+from twisted.internet import reactor
+
+import csp
+
+
+def run_twisted_then_load(module_name):
+    def start():
+        example = __import__("example", fromlist=[module_name])
+        module = getattr(example, module_name, None)
+        if module is None:
+            raise ImportError("No module named %s" % module_name)
+        main = getattr(module, "main", None)
+        if main is None:
+            reactor.stop()
+            return
+
+        _, process = csp.go(main(), reactor)
+        # XXX: Callback, not polling
+        def check():
+            if process._done:
+                reactor.stop()
+            else:
+                reactor.callLater(0.1, check)
+        check()
+
+    reactor.callWhenRunning(start)
+    reactor.run()
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if not args:
+        print "Module name required"
+        exit(1)
+
+    run_twisted_then_load(args[0])

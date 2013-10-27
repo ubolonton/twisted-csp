@@ -1,35 +1,36 @@
 import csp
 
 
-chan1 = csp.Channel()
-chan2 = csp.Channel()
-quit = csp.Channel()
+
+@csp.process
+def one(chan):
+    start, end = yield csp.wait(0.5)
+    print end - start, start, end
+    yield chan.put("one")
 
 
 @csp.process
-def one():
+def two(chan):
     start, end = yield csp.wait(0.5)
     print end - start, start, end
-    yield chan1.put("one")
+    yield chan.put("two")
 
 
-@csp.process
-def two():
+def q(chan):
     start, end = yield csp.wait(0.5)
     print end - start, start, end
-    yield chan2.put("two")
-
-
-@csp.process
-def q():
-    start, end = yield csp.wait(0.5)
-    print end - start, start, end
-    yield quit.put(None)
+    yield chan.put(None)
 
 
 def main():
-    for process in (one, two, q,):
-        process()
+    chan1 = csp.Channel()
+    chan2 = csp.Channel()
+    quit = csp.Channel()
+
+    one(chan1)
+    two(chan2)
+    csp.go(q(quit))
+
     while True:
         chan = yield csp.select(chan1, chan2, quit)
         if chan is chan1:

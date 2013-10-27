@@ -1,10 +1,8 @@
 import csp
 
 
-chan = csp.Channel(2)
-
-
 def main():
+    chan = csp.Channel(2)
     yield chan.put("buffered")
     yield chan.put("channel")
     print (yield chan.take())

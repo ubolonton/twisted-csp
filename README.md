@@ -5,6 +5,49 @@ Communicating sequential processes for Twisted. Channels like Go, or Clojure `co
 # Requirements
 Twisted
 
+# Examples
+Function returning channel (http://talks.golang.org/2012/concurrency.slide#25).
+```python
+def boring(message):
+    channel = csp.Channel()
+    def _do():
+        i = 0
+        while True:
+            yield channel.put("%s %d" % (message, i))
+            yield csp.wait(random.random())
+            i += 1
+    csp.go(_do())
+    return channel
+
+def main():
+    b = boring("boring!")
+    for i in range(5):
+        print "You say: \"%s\"" % (yield b.take())
+    print "You are boring; I'm leaving."
+```
+
+Pingpong (http://talks.golang.org/2013/advconc.slide#6).
+```python
+class Ball:
+    hits = 0
+
+def player(name, table):
+    while True:
+        ball = yield table.take()
+        ball.hits += 1
+        print name, ball.hits
+        yield csp.wait(0.1)
+        yield table.put(ball)
+
+def main():
+    table = csp.Channel()
+
+    yield csp.go(player("ping", table))
+    yield csp.go(player("pong", table))
+
+    yield table.put(Ball())
+    yield csp.wait(1)
+```
 # Running the examples
 Use the `run` script, like
 ```bash
@@ -17,9 +60,7 @@ Examples under `example/go` are ported from Go examples:
 
 # Documentation
 
-Channel operations must happen inside "light-weight processes", which are simulation of execution threads, using generators following certain conventions.
-
-## Create a channel
+## Channels
 Unbuffered: puts and takes are synchronized. A reader waits until a writer arrives, and vice-versa.
 ```python
 csp.Channel()
@@ -28,6 +69,8 @@ Buffered: puts and takes can be asynchronous. A reader proceeds if the queue is 
 ```python
 csp.Channel(size = 2)
 ```
+
+Channel operations must happen inside "light-weight processes", which are simulation of execution threads, using generators following certain conventions.
 
 ## yield channel.put(object)
 Put an object on the channel. If the channel is full, or unbuffered, wait until an object is taken off the channel, or when another process tries to take from the channel.
@@ -42,27 +85,6 @@ def slow_pipe(in, out):
     v = yield in.take()
     yield csp.wait(0.5)
     yield out.put(v)
-```
-
-## csp.go(gen)
-Spawn a lightweight process given a generator.
-```python
-def pipe(in, out):
-    v = yield in.take()
-    yield out.put(v)
-
-go(pipe(search, log))
-```
-
-## csp.process(f)
-Decorate a generator function so that calling it spawns a process.
-```python
-@process
-def pipe(in, out):
-    v = yield in.take()
-    yield out.put(v)
-
-pipe(search, log)
 ```
 
 ## yield csp.select(*channels)
@@ -89,6 +111,27 @@ def test(url):
         print yield chan.take()
     else:
         print "Search engines are slow"
+```
+
+## csp.go(gen)
+Spawn a lightweight process given a generator.
+```python
+def pipe(in, out):
+    v = yield in.take()
+    yield out.put(v)
+
+go(pipe(search, log))
+```
+
+## csp.process(f)
+Decorate a generator function so that calling it spawns a process.
+```python
+@process
+def pipe(in, out):
+    v = yield in.take()
+    yield out.put(v)
+
+pipe(search, log)
 ```
 
 ## csp.channelify(deferred)

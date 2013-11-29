@@ -54,6 +54,11 @@ Use the `run` script, like
 ./run example.go.pingpong
 ```
 
+Examples under `example/go` are ported from Go examples:
+- http://talks.golang.org/2012/concurrency.slide
+- http://talks.golang.org/2013/advconc.slide.
+
+
 # Playing around in a REPL
 ```python
 Python 2.7.5+ (default, Sep 19 2013, 13:48:49)
@@ -100,10 +105,6 @@ pong 10
 
 >>>
 ```
-
-Examples under `example/go` are ported from Go examples:
-- http://talks.golang.org/2012/concurrency.slide
-- http://talks.golang.org/2013/advconc.slide.
 
 # Documentation
 

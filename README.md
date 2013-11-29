@@ -138,8 +138,8 @@ pipe(search, log)
 Convert a Twisted deferred into a channel. A tuple of `(value, failure)` will be put on the channel once the deferred finishes.
 ```python
 from twisted.web.client import getPage
-def google(url):
-    c = csp.channelify(getPage(url))
+def google(term):
+    c = csp.channelify(getPage("http://www.google.com/search?q=%s" % term))
     result, error = yield c.take()
     if error:
         print "Uhm, not good:"

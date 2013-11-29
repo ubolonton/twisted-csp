@@ -251,7 +251,7 @@ def wait(seconds):
     return WAIT, seconds
 
 
-def channelify(d):
+def tagged_channelify(d):
     """Takes a Twisted deferred, returns a channel that can be taken from.
     """
     channel = Channel()
@@ -267,6 +267,24 @@ def channelify(d):
     d.addCallback(ok)
     d.addErrback(error)
     return channel
+
+
+def multi_channelify(d):
+    """Takes a Twisted deferred, returns 2 channels that can be taken from:
+    a value channel and an error channel.
+    """
+    v_channel = Channel()
+    e_channel = Channel()
+    # TODO: Maybe better error handling?
+    @process
+    def ok(value):
+        yield v_channel.put(value)
+    @process
+    def error(failure):
+        yield e_channel.put(failure)
+    d.addCallback(ok)
+    d.addErrback(error)
+    return v_channel, e_channel
 
 
 def quit():

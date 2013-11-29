@@ -54,6 +54,53 @@ Use the `run` script, like
 ./run example.go.pingpong
 ```
 
+# Playing around in a REPL
+```python
+Python 2.7.5+ (default, Sep 19 2013, 13:48:49)
+[GCC 4.8.1] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import thread
+>>> from twisted.internet import reactor
+>>> thread.start_new_thread(reactor.run, (), {"installSignalHandlers": False})
+139751934256896
+>>> from csp import *
+>>> class Ball:
+...     hits = 0
+...
+>>> def player(name, table):
+...     while True:
+...         ball = yield table.take()
+...         ball.hits += 1
+...         print name, ball.hits
+...         yield wait(0.1)
+...         yield table.put(ball)
+...
+>>> @process
+... def main():
+...     table = Channel()
+...     yield go(player("ping", table))
+...     yield go(player("pong", table))
+...     yield table.put(Ball())
+...     yield wait(1)
+...
+>>> reactor.callFromThread(main)
+>>> ping 1
+pong 2
+ping 3
+pong 4
+ping 5
+pong 6
+ping 7
+pong 8
+ping 9
+pong 10
+<csp.Process instance at 0x1274e18> stopped
+<csp.Process instance at 0x1274ef0> stopped
+<csp.Process instance at 0x1274c68> stopped
+
+>>>
+```
+
 Examples under `example/go` are ported from Go examples:
 - http://talks.golang.org/2012/concurrency.slide
 - http://talks.golang.org/2013/advconc.slide.

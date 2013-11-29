@@ -255,13 +255,17 @@ def channelify(d):
     """Takes a Twisted deferred, returns a channel that can be taken from.
     """
     channel = Channel()
-    # TODO: Error handling
-    # TODO: Add a control to be able to cancel the deferred (by
-    # closing maybe?)
+    # TODO: Maybe better error handling?
     @process
     def ok(value):
-        yield channel.put(value)
+        yield channel.put((True, value))
+    @process
+    def error(failure):
+        yield channel.put((False, failure))
+    # TODO: Add a control to be able to cancel the deferred (by
+    # closing maybe?)
     d.addCallback(ok)
+    d.addErrback(error)
     return channel
 
 

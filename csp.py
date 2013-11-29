@@ -1,4 +1,5 @@
 import types
+import Queue
 
 from time import time
 
@@ -29,26 +30,46 @@ CONTINUE = "continue"
 SLEEP = "sleep"
 
 
-# FIX: This is a stack (LIFO), channel must be queue (FIFO)
 # TODO: Add "close" functionality
 class Channel:
     # TODO: How about unbounded channel?
-    def __init__(self, size = None):
-        # TODO While +1?
+    def __init__(self, size = 0):
+        """Returns a new channel backed by a buffer of the specified size. If
+        size is 0, putting/taking are synchronized.
+        """
+        # Actually +1 so that there is a place to hold the value
+        # waiting for the consumer to pull it. This is an artifact of
+        # the pull approach. FIX: Use callbacks to push underneath.
         self.size = size + 1 if size else 1
-        self.buffer = []
+        assert self.size > 0
+        self.buffer = Queue.Queue(self.size)
         # TODO: What is drain?
         self.drain = False
 
     def put(self, message):
         def do():
-            if self.drain and len(self.buffer) == 0:
+            # TODO: This might work once we switch to pushing
+            # if self.buffer:
+            #     try:
+            #         self.put_nowait(message)
+            #     except Queue.Full:
+            #         return SLEEP, None
+            #     else:
+            #         return CONTINUE, None
+            # else:
+            #     self.waiting = message,
+            #     return SLEEP, None
+
+            if self.drain and self.buffer.empty():
                 self.drain = False
                 return CONTINUE, None
 
-            if len(self.buffer) < self.size:
-                self.buffer.append(message)
-                self.drain = (len(self.buffer) == self.size)
+            # Full queue means full channel with another process waiting
+            if not self.buffer.full():
+                self.buffer.put(message)
+                # If the queue is full now it means the channel was
+                # full, and this put should wait
+                self.drain = self.buffer.full()
                 if self.drain:
                     return SLEEP, None
                 return CONTINUE, None
@@ -58,9 +79,21 @@ class Channel:
 
     def take(self):
         def do():
-            if len(self.buffer) == 0:
+            try:
+                value = self.buffer.get_nowait()
+            except Queue.Empty:
                 return SLEEP, None
-            return CONTINUE, self.buffer.pop()
+            else:
+                # TODO: This might work when we switch to pushing
+                # # FIX: ???
+                # if self.waiting:
+                #     try:
+                #         self.buffer.put_nowait(self.waiting[0])
+                #     except Queue.Full:
+                #         pass
+                #     else:
+                #         self.waiting = None
+                return CONTINUE, value
         return CHANNEL, do
 
 
@@ -140,6 +173,7 @@ class Process:
             do(callback, errback)
             return
 
+        # TODO: Shouldn't client code decide how to wire processes?
         if type == SPAWN:
             self._next()
             self.subprocesses.append(do)
@@ -196,12 +230,13 @@ def process(reactor_or_f = global_reactor):
 
 
 # TODO: Support something like Clojure core.async's alts!
+# FIX: Support putting
 def select(*channels):
     def do():
         # TODO: This is prioritizing channel that is listed first. Is
         # that desirable? No. Randomize an order first then check!
         for channel in channels:
-            if len(channel.buffer) > 0:
+            if not channel.buffer.empty():
                 return CONTINUE, channel
         return SLEEP, None
     return CHANNEL, do

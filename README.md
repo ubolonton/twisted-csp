@@ -11,7 +11,7 @@ Use the `run` script, like
 ./run example.go.pingpong
 ```
 
-Examples are under `example/go` are ported from Go examples http://talks.golang.org/2012/concurrency.slide and http://talks.golang.org/2013/advconc.slide
+Examples are under `example/go` are ported from Go examples http://talks.golang.org/2012/concurrency.slide and http://talks.golang.org/2013/advconc.slide.
 
 # Documentation
 
@@ -90,7 +90,7 @@ def test(url):
 ```
 
 ## csp.channelify(deferred)
-Convert a Twisted deferred into a channel. A tuple of `(value, failure)` will be put on the channel once the deferred finishes
+Convert a Twisted deferred into a channel. A tuple of `(value, failure)` will be put on the channel once the deferred finishes.
 ```python
 from twisted.web.client import getPage
 def google(url):
@@ -106,7 +106,9 @@ def google(url):
 
 # TODO
 - Proper implementation of channel operations (each channel needs to keep track of pending readers/writers). The current implementation simply polls repeatedly. While it may appear to work, it is (at least) not efficient.
+- Closeable channels.
 - Support for selecting over all channel operations, instead of just taking.
+- More fine-grained control of processes.
 - More examples.
 
 # Limitations

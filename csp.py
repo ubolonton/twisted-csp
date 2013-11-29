@@ -258,10 +258,10 @@ def tagged_channelify(d):
     # TODO: Maybe better error handling?
     @process
     def ok(value):
-        yield channel.put((True, value))
+        yield channel.put((value, None))
     @process
     def error(failure):
-        yield channel.put((False, failure))
+        yield channel.put((None, failure))
     # TODO: Add a control to be able to cancel the deferred (by
     # closing maybe?)
     d.addCallback(ok)

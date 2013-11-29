@@ -17,7 +17,6 @@ from twisted.internet import reactor as global_reactor
 
 # TODO: Instruction object
 CHANNEL = "chan"
-FUNCTION = "fn"
 SPAWN = "spawn"
 QUIT = "quit"
 CALLBACKS = "callbacks"
@@ -250,15 +249,6 @@ def wait(seconds):
     "Returns" a tuple of start time and end time of the wait.
     """
     return WAIT, seconds
-
-
-# TODO
-def wrap(fn):
-    def wrapped(*args, **kwargs):
-        def do(callback):
-            fn(callback, *args, **kwargs)
-        return FUNCTION, do
-    return wrapped
 
 
 def channelify(d):

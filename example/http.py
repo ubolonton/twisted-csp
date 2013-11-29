@@ -12,7 +12,7 @@ def excerpt(text, cutoff=100):
 
 
 def request(url):
-    return csp.tagged_channelify(getPage(url))
+    return csp.channelify(getPage(url))
 
 
 def main():

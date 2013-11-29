@@ -251,7 +251,7 @@ def wait(seconds):
     return WAIT, seconds
 
 
-def tagged_channelify(d):
+def channelify(d):
     """Takes a Twisted deferred, returns a channel that can be taken from.
     """
     channel = Channel()

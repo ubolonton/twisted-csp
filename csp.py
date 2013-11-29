@@ -39,7 +39,8 @@ class Channel:
         """
         # Actually +1 so that there is a place to hold the value
         # waiting for the consumer to pull it. This is an artifact of
-        # the pull approach. FIX: Use callbacks to push underneath.
+        # the pull approach. FIX: Use callbacks to push instead (and
+        # keep lists of pending reads/writes).
         self.size = size + 1 if size else 1
         assert self.size > 0
         self.buffer = Queue.Queue(self.size)

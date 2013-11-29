@@ -1,6 +1,14 @@
 This is a port of https://github.com/olahol/node-csp, with
 modifications to suit Python and Twisted, and some improvements.
 
+Other CSP libraries:
+- http://code.google.com/p/pycsp/
+- https://github.com/python-concurrency/python-csp
+- https://github.com/stuglaser/pychan
+
+These libraries use threads/processes (except for pycsp which has support for greenlets). This makes implementation simpler, sacrificing efficiency (but managing threads/processes can be a chore). On the other hand they are much more generic, and support networked channels (that is not necessarily a good thing though).
+TODO: More elaborate comparison of different approaches.
+
 Inspiration: http://swannodette.github.io/2013/08/24/es6-generators-and-csp
 
 To run an example, use the =run= script, like:
@@ -25,6 +33,11 @@ Limitations (either fundamental to the approach, or of the implementation):
   infinite loop blocking thread (Go/Clojure do not have this problem
   because single syntactic units are used there, as opposed to "yield"
   plus "function")).
+
+A possible problem with all implementations: alt can only be first-class if it is a built-in language feature (Go), or if the language has macros (Clojure). In Python alts usually:
+- Select only on reads.
+- Use clunky syntax for selecting from a mix of reads/writes.
+- Pass string to be evaluated as code.
 
 #+begin_src python
 import csp
@@ -80,3 +93,13 @@ def foo1(in, out):
     yield csp.wait(process)
 
 #+end_src
+
+# TODO
+API:
+csp.Channel
+csp.go
+csp.spawn
+csp.process
+csp.select
+csp.wait
+csp.channelify

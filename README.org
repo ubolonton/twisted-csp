@@ -103,3 +103,5 @@ csp.process
 csp.select
 csp.wait
 csp.channelify
+channel.put
+channel.take

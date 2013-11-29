@@ -11,7 +11,9 @@ Use the `run` script, like
 ./run example.go.pingpong
 ```
 
-Examples are under `example/go` are ported from Go examples http://talks.golang.org/2012/concurrency.slide and http://talks.golang.org/2013/advconc.slide.
+Examples under `example/go` are ported from Go examples:
+- http://talks.golang.org/2012/concurrency.slide
+- http://talks.golang.org/2013/advconc.slide.
 
 # Documentation
 
@@ -27,11 +29,11 @@ Buffered: puts and takes can be asynchronous. A reader proceeds if the queue is 
 csp.Channel(size = 2)
 ```
 
-## yield channel.take()
-Take an object off the channel. If the channel is empty, wait until something is put on the channel.
-
 ## yield channel.put(object)
 Put an object on the channel. If the channel is full, or unbuffered, wait until an object is taken off the channel, or when another process tries to take from the channel.
+
+## yield channel.take()
+Take an object off the channel. If the channel is empty, or unbuffered, wait until something is put on the channel.
 
 ## yield csp.wait(seconds)
 Suspend the current process without blocking the real thread.

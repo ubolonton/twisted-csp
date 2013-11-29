@@ -260,15 +260,18 @@ def wrap(fn):
     return wrapped
 
 
-# TODO
-def chanify(fn):
-    def f(channel, *args, **kwargs):
-        def ff(error, message):
-            def gen():
-                yield channel.put(message)
-            spawn(gen)
-        fn(channel, *args, **kwargs)
-    return f
+def channelify(d):
+    """Takes a Twisted deferred, returns a channel that can be taken from.
+    """
+    channel = Channel()
+    # TODO: Error handling
+    # TODO: Add a control to be able to cancel the deferred (by
+    # closing maybe?)
+    @process
+    def ok(value):
+        yield channel.put(value)
+    d.addCallback(ok)
+    return channel
 
 
 def quit():

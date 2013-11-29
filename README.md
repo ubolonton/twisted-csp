@@ -1,4 +1,4 @@
-Communicating sequential process for Twisted.
+Communicating sequential processes for Twisted. Channels like Go, or Clojure `core.async`.
 
 **WARNING: This is currently a toy.**
 
@@ -8,7 +8,7 @@ Twisted
 # Running the examples
 Use the `run` script, like
 ```bash
-    ./run example.go.pingpong
+./run example.go.pingpong
 ```
 
 Examples are under `example/go` are ported from Go examples http://talks.golang.org/2012/concurrency.slide and http://talks.golang.org/2013/advconc.slide
@@ -27,9 +27,24 @@ Buffered: puts and takes can be asynchronous. A reader proceeds if the queue is 
 csp.Channel(size = 2)
 ```
 
+## yield channel.take()
+Take an object off the channel. If the channel is empty, wait until something is put on the channel.
+
+## yield channel.put(object)
+Put an object on the channel. If the channel is full, or unbuffered, wait until an object is taken off the channel, or when another process tries to take from the channel.
+
+## yield csp.wait(seconds)
+Suspend the current process without blocking the real thread.
+```python
+def slow_pipe(in, out):
+    v = yield in.take()
+    yield csp.wait(0.5)
+    yield out.put(v)
+```
+
 ## csp.go(gen)
 Spawn a lightweight process given a generator.
-```
+```python
 def pipe(in, out):
     v = yield in.take()
     yield out.put(v)
@@ -48,24 +63,9 @@ def pipe(in, out):
 pipe(search, log)
 ```
 
-## yield csp.wait(seconds)
-Suspend the current process without blocking the reald thread.
-```python
-def slow_pipe(in, out):
-    v = yield in.take()
-    yield csp.wait(0.5)
-    yield out.put(v)
-```
-
-## yield channel.take()
-Take an object off the channel. If the channel is empty, wait until something is put on the channel.
-
-## yield channel.put(object)
-Put an object on the channel. If the channel is full, or unbuffered, wait until an object is taken off the channel, or when another process tries to take from the channel.
-
 ## yield csp.select(*channels)
 Choose the first channel that is ready to be taken from, waiting until at least one is ready.
-```
+```python
 def test(url):
     def timeout_channel(seconds):
         c = csp.Channel()

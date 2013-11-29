@@ -1,3 +1,5 @@
+This is currently a toy.
+
 This is a port of https://github.com/olahol/node-csp, with
 modifications to suit Python and Twisted, and some improvements.
 

@@ -3,24 +3,29 @@ import csp
 from twisted.web.client import getPage
 
 
-def excerpt(text, cutoff=100):
-    l = len(text)
-    if l > cutoff:
-        return text[0:cutoff] + "..."
-    else:
-        return text
-
-
 def request(url):
     return csp.channelify(getPage(url))
 
 
 def main():
-    c = request("http://google.com")
-    result, error = yield c.take()
-    if error:
-        print "Uhm, not good"
-        print error
-    else:
-        print "Here"
-        print excerpt(result)
+    def timeout_channel(seconds):
+        c = csp.Channel()
+        def _t():
+            yield csp.wait(seconds)
+            yield c.put(None)
+        csp.go(_t())
+        return c
+
+    c = request("http://www.google.com/search?q=csp")
+    t = timeout_channel(10)
+    chan = yield csp.select(c, t)
+    if chan is c:
+        result, error = yield c.take()
+        if error:
+            print "Uhm, not good"
+            print error
+        else:
+            print "Here"
+            print result
+    elif chan is t:
+        print "Timeout"

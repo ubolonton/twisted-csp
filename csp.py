@@ -40,8 +40,10 @@ class Channel:
         """Returns a new channel backed by a buffer of the specified size. If
         size is 0, putting/taking are synchronized.
         """
-        # assert self.size > 0
-        # self.buffer = Queue.Queue(self.size)
+        if size > 0:
+            self.buffer = Queue.Queue(size)
+        else:
+            self.buffer = None
 
         # TODO: Consider using deque to help with implementing
         # "select" (popping all the available queues, then "unpop" all
@@ -71,18 +73,29 @@ class Channel:
     # TODO: Most of this logic should probably be handled by the
     # process, especially to implement "select"
     def flush(self):
-        # TODO: Buffered channel
         # print self, "flush"
         # FIX: This is a race condition if multiple threads are used.
         # Some sort of synchronization is needed (isn't the whole
         # thing supposed to be single-threaded though?)
-        while not (self.writers.empty() or self.readers.empty()):
-            # print self, "flushing"
-            writer, value = self.writers.get()
-            writer.callback(None)
-            reader = self.readers.get()
-            reader.callback(value)
-
+        if self.buffer is None:
+            while not (self.writers.empty() or self.readers.empty()):
+                writer, value = self.writers.get()
+                reader = self.readers.get()
+                writer.callback(None)
+                reader.callback(value)
+        else:
+            while True:
+                if not (self.buffer.empty() or self.readers.empty()):
+                    value = self.buffer.get()
+                    reader = self.readers.get()
+                    reader.callback(value)
+                    continue
+                if not (self.writers.empty() or self.buffer.full()):
+                    writer, value = self.writers.get()
+                    self.buffer.put(value)
+                    writer.callback(None)
+                    continue
+                break
 
 
 # FIX: This is so awkward

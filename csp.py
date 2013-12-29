@@ -4,6 +4,7 @@ import Queue
 from time import time
 
 from twisted.internet import reactor as global_reactor
+from twisted.internet.defer import Deferred
 
 
 # TODO: Pull out the parts specific to twisted's event loop, add
@@ -14,14 +15,17 @@ from twisted.internet import reactor as global_reactor
 # TODO: Different buffer strategies like Clojure's core.async
 # (dropping, sliding)
 
+# TODO: Error mechanism? Convert errback back into exception? Throwing
+# exception into the generator?
+
 
 # TODO: Instruction object
-CHANNEL = "chan"
 SPAWN = "spawn"
 QUIT = "quit"
 CALLBACKS = "callbacks"
 WAIT = "wait"
 INFO = "info"
+DEFERRED = "deferred"
 
 
 # TODO: State object
@@ -36,65 +40,49 @@ class Channel:
         """Returns a new channel backed by a buffer of the specified size. If
         size is 0, putting/taking are synchronized.
         """
-        # Actually +1 so that there is a place to hold the value
-        # waiting for the consumer to pull it. This is an artifact of
-        # the pull approach. FIX: Use callbacks to push instead (and
-        # keep lists of pending reads/writes).
-        self.size = size + 1 if size else 1
-        assert self.size > 0
-        self.buffer = Queue.Queue(self.size)
-        # TODO: What is drain?
-        self.drain = False
+        # assert self.size > 0
+        # self.buffer = Queue.Queue(self.size)
+
+        # TODO: Consider using deque to help with implementing
+        # "select" (popping all the available queues, then "unpop" all
+        # but one of them).
+
+        # XXX: These queues have to be unlimited to accommodate all
+        # pending readers/writers. Is there another lighter way?
+        self.readers = Queue.Queue()
+        self.writers = Queue.Queue()
 
     def put(self, message):
-        def do():
-            # TODO: This might work once we switch to pushing
-            # if self.buffer:
-            #     try:
-            #         self.put_nowait(message)
-            #     except Queue.Full:
-            #         return SLEEP, None
-            #     else:
-            #         return CONTINUE, None
-            # else:
-            #     self.waiting = message,
-            #     return SLEEP, None
-
-            if self.drain and self.buffer.empty():
-                self.drain = False
-                return CONTINUE, None
-
-            # Full queue means full channel with another process waiting
-            if not self.buffer.full():
-                self.buffer.put(message)
-                # If the queue is full now it means the channel was
-                # full, and this put should wait
-                self.drain = self.buffer.full()
-                if self.drain:
-                    return SLEEP, None
-                return CONTINUE, None
-
-            return SLEEP, None
-        return CHANNEL, do
+        writer = Deferred()
+        self.writers.put((writer, message))
+        # print "schedule put"
+        # XXX: The channel shouldn't know about the reactor
+        global_reactor.callLater(0, self.flush)
+        return DEFERRED, writer
 
     def take(self):
-        def do():
-            try:
-                value = self.buffer.get_nowait()
-            except Queue.Empty:
-                return SLEEP, None
-            else:
-                # TODO: This might work when we switch to pushing
-                # # FIX: ???
-                # if self.waiting:
-                #     try:
-                #         self.buffer.put_nowait(self.waiting[0])
-                #     except Queue.Full:
-                #         pass
-                #     else:
-                #         self.waiting = None
-                return CONTINUE, value
-        return CHANNEL, do
+        reader = Deferred()
+        self.readers.put(reader)
+        # print "schedule take"
+        # XXX: The channel shouldn't know about the reactor
+        global_reactor.callLater(0, self.flush)
+        return DEFERRED, reader
+
+    # TODO: Most of this logic should probably be handled by the
+    # process, especially to implement "select"
+    def flush(self):
+        # TODO: Buffered channel
+        # print self, "flush"
+        # FIX: This is a race condition if multiple threads are used.
+        # Some sort of synchronization is needed (isn't the whole
+        # thing supposed to be single-threaded though?)
+        while not (self.writers.empty() or self.readers.empty()):
+            # print self, "flushing"
+            writer, value = self.writers.get()
+            writer.callback(None)
+            reader = self.readers.get()
+            reader.callback(value)
+
 
 
 # FIX: This is so awkward
@@ -108,6 +96,7 @@ class Process:
         self._next()
 
     def _next(self, message = NONE):
+        # print self, "next", message
         try:
             if message is NONE:
                 self.step = self.gen.next()
@@ -125,7 +114,6 @@ class Process:
             self._done = True
             print self, "stopped"
 
-    # FIX: This looks inefficient. Use callback instead of polling
     def _spin(self):
         self.reactor.callLater(0, self.run)
 
@@ -136,15 +124,17 @@ class Process:
         # TODO: Some better name, not "do"
         type, do = self.step
 
-        if type == CHANNEL:
-            state, message = do()
-            assert state in (CONTINUE, SLEEP)
-            if state == CONTINUE:
+        if type == DEFERRED:
+            d = do
+            def got_message(message):
+                # print self, "got", message
                 self._next(message)
-            self._spin()
+                self._spin()
+            d.addCallback(got_message)
             return
 
         if type == WAIT:
+            # print self, "wait"
             seconds = do
             def wake_up(start):
                 end = time()
@@ -229,17 +219,8 @@ def process(reactor_or_f = global_reactor):
         return decorator
 
 
-# TODO: Support something like Clojure core.async's alts!
-# FIX: Support putting
 def select(*channels):
-    def do():
-        # TODO: This is prioritizing channel that is listed first. Is
-        # that desirable? No. Randomize an order first then check!
-        for channel in channels:
-            if not channel.buffer.empty():
-                return CONTINUE, channel
-        return SLEEP, None
-    return CHANNEL, do
+    raise Exception("Not implemented yet")
 
 
 def wait(seconds):

@@ -25,7 +25,12 @@ QUIT = "quit"
 CALLBACKS = "callbacks"
 WAIT = "wait"
 INFO = "info"
-DEFERRED = "deferred"
+
+TAKE = "take"
+PUT = "put"
+TAKE_READY = "take_ready"
+PUT_READY = "put_ready"
+SELECT = "select"
 
 
 # TODO: State object
@@ -55,20 +60,10 @@ class Channel:
         self.writers = Queue.Queue()
 
     def put(self, message):
-        writer = Deferred()
-        self.writers.put((writer, message))
-        # print "schedule put"
-        # XXX: The channel shouldn't know about the reactor
-        global_reactor.callLater(0, self.flush)
-        return DEFERRED, writer
+        return PUT, (self, message)
 
     def take(self):
-        reader = Deferred()
-        self.readers.put(reader)
-        # print "schedule take"
-        # XXX: The channel shouldn't know about the reactor
-        global_reactor.callLater(0, self.flush)
-        return DEFERRED, reader
+        return TAKE, self
 
     # TODO: Most of this logic should probably be handled by the
     # process, especially to implement "select"
@@ -130,6 +125,10 @@ class Process:
     def _spin(self):
         self.reactor.callLater(0, self.run)
 
+    def _got_message(self, message):
+        self._next(message)
+        self._spin()
+
     def run(self):
         if self._done:
             return
@@ -137,13 +136,20 @@ class Process:
         # TODO: Some better name, not "do"
         type, do = self.step
 
-        if type == DEFERRED:
-            d = do
-            def got_message(message):
-                # print self, "got", message
-                self._next(message)
-                self._spin()
-            d.addCallback(got_message)
+        if type == PUT:
+            channel, message = do
+            writer = Deferred()
+            writer.addCallback(self._got_message)
+            channel.writers.put((writer, message))
+            self.reactor.callLater(0, channel.flush)
+            return
+
+        if type == TAKE:
+            channel = do
+            reader = Deferred()
+            reader.addCallback(self._got_message)
+            channel.readers.put(reader)
+            self.reactor.callLater(0, channel.flush)
             return
 
         if type == WAIT:

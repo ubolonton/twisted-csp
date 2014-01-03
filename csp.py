@@ -4,7 +4,7 @@ import Queue
 from time import time
 
 from twisted.internet import reactor as global_reactor
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList
 
 
 # TODO: Pull out the parts specific to twisted's event loop, add
@@ -59,11 +59,30 @@ class Channel:
         self.readers = Queue.Queue()
         self.writers = Queue.Queue()
 
+        self.maybe_readers = set()
+        self.maybe_writers = set()
+
     def put(self, message):
         return PUT, (self, message)
 
     def take(self):
         return TAKE, self
+
+    def can_put(self):
+        if not self.readers.empty():
+            return True
+        elif self.buffer and not self.buffer.full():
+            return True
+        else:
+            return False
+
+    def can_take(self):
+        if not self.writers.empty():
+            return True
+        elif self.buffer and not self.buffer.empty():
+            return True
+        else:
+            return False
 
     # TODO: Most of this logic should probably be handled by the
     # process, especially to implement "select"
@@ -72,6 +91,7 @@ class Channel:
         # FIX: This is a race condition if multiple threads are used.
         # Some sort of synchronization is needed (isn't the whole
         # thing supposed to be single-threaded though?)
+
         if self.buffer is None:
             while not (self.writers.empty() or self.readers.empty()):
                 writer, value = self.writers.get()
@@ -91,7 +111,6 @@ class Channel:
                     writer.callback(None)
                     continue
                 break
-
 
 # FIX: This is so awkward
 NONE = object()
@@ -126,6 +145,7 @@ class Process:
         self.reactor.callLater(0, self.run)
 
     def _got_message(self, message):
+        print self, "got", message
         self._next(message)
         self._spin()
 
@@ -135,6 +155,7 @@ class Process:
 
         # TODO: Some better name, not "do"
         type, do = self.step
+        print self, self.step
 
         if type == PUT:
             channel, message = do
@@ -150,6 +171,82 @@ class Process:
             reader.addCallback(self._got_message)
             channel.readers.put(reader)
             self.reactor.callLater(0, channel.flush)
+            return
+
+        # So one of the operations we were SELECTing on is ready,
+        # cancel stop looking
+        def _cancel_alls(_, deferreds):
+            for v, channel, d in deferreds:
+                assert v in ("writer", "reader")
+                if v == "writer":
+                    channel.maybe_writers.remove(d)
+                elif v == "reader":
+                    channel.maybe_readers.remove(d)
+
+        def _ready_write(channel, operations, maybe_writer, message):
+            # channel.maybe_writers.remove(maybe_writer)
+
+            # XXX: Yup, race conditions are everywhere. Anyway, we
+            # need to check again because some other process waiting
+            # to write on the channel may have proceeded already.
+            if channel.can_put():
+                writer = Deferred()
+                writer.addCallback(self._got_message)
+                channel.writers.put((writer, message))
+                self.reactor.callLater(0, channel.flush)
+            else:
+                # maybe_writer = Deferred()
+                # maybe_writer.addCallback(_ready_write, maybe_writer, message)
+                # channel.maybe_writers.add(maybe_writer)
+
+                # Another process got their first, start SELECTing all
+                # over again :(
+                # FIX: This is simple but inefficient. It's better to
+                # stop looking at other operations only if this one
+                # can actually go forward
+                _do_select(operations)
+
+            # Similar to _ready_write
+        def _ready_read(channel, operations, maybe_reader):
+            if channel.can_take():
+                reader = Deferred()
+                reader.addCallback(self._got_message)
+                channel.readers.put(reader)
+                self.reactor.callLater(0, channel.flush)
+            else:
+                _do_select(operations)
+
+        def _do_select(operations):
+            deferreds = []
+            # Tell the channels we "may be" interested in these
+            # operations
+            for op, data in operations:
+                assert op in (PUT, TAKE)
+                if op == PUT:
+                    channel, message = data
+                    # TODO
+                    maybe_writer = Deferred()
+                    maybe_writer.addCallback(_ready_write, operations, maybe_writer, message)
+                    channel.maybe_writers.add(maybe_writer)
+                    deferreds.append(("writer", channel, maybe_writer))
+                elif op == TAKE:
+                    channel =  data
+                    # TODO
+                    maybe_reader = Deferred()
+                    maybe_reader.addCallback(_ready_write, operations, maybe_reader)
+                    channel.maybe_readers.add(maybe_reader)
+                    deferreds.append(("reader", channel, maybe_reader))
+
+            # TODO: Indeterminism, if needed, should be specified here
+            # (e.g. shuffle the deferred list), right?
+
+            # Go ahead with the first one that responds
+            ds = DeferredList([d for _, _, d in deferreds], fireOnOneCallback = True)
+            ds.addCallback(_cancel_alls)
+
+        if type == SELECT:
+            operations = do
+            _do_select(operations)
             return
 
         if type == WAIT:
@@ -238,8 +335,17 @@ def process(reactor_or_f = global_reactor):
         return decorator
 
 
-def select(*channels):
-    raise Exception("Not implemented yet")
+def take(channel):
+    return TAKE, channel
+
+
+def put(channel, message):
+    return PUT, (channel, message)
+
+
+def select(*operations):
+    # raise Exception("Not implemented yet")
+    return SELECT, operations
 
 
 def wait(seconds):

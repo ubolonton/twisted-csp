@@ -19,9 +19,10 @@ class ManyToManyChannel:
     implements(IChannel)
 
     def __init__(self, buf):
+        self.buf = buf
+
         self.takes = RingBuffer(32)
         self.puts = RingBuffer(32)
-
         self.dirty_takes = 0
         self.dirty_puts = 0
         self.closed = False

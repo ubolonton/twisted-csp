@@ -1,3 +1,5 @@
+import collections
+
 from zope.interface import implements
 
 from csp.interfaces import IChannel
@@ -7,6 +9,10 @@ import csp.dispatch as dispatch
 
 MAX_DIRTY = 64
 MAX_QUEUE_SIZE = 1024
+
+PutBox = collections.namedtuple("PutBox", ["handler", "value"])
+
+Box = collections.namedtuple("Box", ["value"])
 
 
 class ManyToManyChannel:
@@ -25,8 +31,7 @@ class ManyToManyChannel:
             raise Exception("Cannot put None on a channel")
 
         if self.closed or not handler.is_active():
-            # TODO (box nil)
-            return
+            return Box(None)
 
         while True:
             taker = self.takes.pop()
@@ -37,7 +42,7 @@ class ManyToManyChannel:
                     # Confirm with both sides and give it to him
                     callback, _ = taker.commit(), handler.commit()
                     dispatch.run(callback, value)
-                    # TODO (box nil)
+                    return Box(None)
                 else:
                     continue
 
@@ -47,14 +52,14 @@ class ManyToManyChannel:
                 if self.buf is not None and not self.buf.full:
                     handler.commit()
                     self.buf.add(value)
-                    # TODO (box nil)
+                    return Box(None)
                 # No more room for waiting
                 else:
                     # But maybe some putters are no longer interested.
                     # Remove them...
                     if self.dirty_puts > MAX_DIRTY:
                         # FIX: Putter or sth
-                        self.puts.cleanup(keep = lambda handler, value: handler.is_active())
+                        self.puts.cleanup(keep = lambda putter: putter.handler.is_active())
                         self.dirty_puts = 0
                     else:
                         self.dirty_puts += 1
@@ -63,7 +68,7 @@ class ManyToManyChannel:
                         raise Exception("Max queue size reached")
 
                     # Get the putter in line
-                    self.puts.unbounded_unshift((handler, value))
+                    self.puts.unbounded_unshift(PutBox(handler, value))
             break
 
     def take(self, handler):
@@ -72,22 +77,22 @@ class ManyToManyChannel:
 
         if self.buf is not None and len(self.buf) > 0:
             handler.commit()
-            # TODO: (box (impl/remove! buf))
+            return Box(self.buf.remove())
         else:
             while True:
                 putter = self.puts.pop()
                 if putter is not None:
-                    put_handler, value = putter
+                    put_handler = putter.handler
                     if put_handler.is_active():
                         callback, _ = put_handler.commit(), handler.commit()
                         dispatch.run(callback)
-                        # TODO (box val)
+                        return Box(putter.value)
                     else:
                         continue
                 else:
                     if self.closed:
                         handler.commit()
-                        # TODO (box nil)
+                        return Box(None)
                     else:
                         if self.dirty_takes > MAX_DIRTY:
                             self.takes.cleanup(keep = lambda handler: handler.is_active())

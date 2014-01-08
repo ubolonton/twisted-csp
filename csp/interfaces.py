@@ -1,5 +1,9 @@
 from zope.interface import Interface
 
+# TODO: These interfaces are nowhere nearly as powerful as Clojure's
+# protocols (e.g. no reify). I'm not sure they are even worth it
+# except for maybe documentation.
+
 class IChannel(Interface):
 
     def take(self, handler):

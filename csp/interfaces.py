@@ -23,7 +23,7 @@ class IHandler(Interface):
 
 class IBuffer(Interface):
 
-    def full(self):
+    def is_full(self):
         pass
 
     def remove(self):

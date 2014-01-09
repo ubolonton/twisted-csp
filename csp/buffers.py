@@ -18,7 +18,7 @@ class RingBuffer:
         self.ring.append(item)
 
     def unbounded_unshift(self, item):
-        if len(self.ring) == self.ring.maxlen:
+        if self.is_full():
             self.resize()
         self.unshift(item)
 
@@ -35,6 +35,9 @@ class RingBuffer:
             if keep(item):
                 self.ring.append(item)
 
+    def is_full(self):
+        return len(self.ring) == self.ring.maxlen
+
     def __len__(self):
         return len(self.ring)
 
@@ -42,21 +45,26 @@ class RingBuffer:
         return "<RingBuffer %s>" % self.ring.__repr__()
 
 
-# TODO
+# TODO FIX: Do we really need to wrap RingBuffer like this?
 class FixedBuffer:
     implements(IBuffer)
 
+    def __init__(self, size):
+        assert size > 0
+        self.buf = RingBuffer(size)
+
     def is_full(self):
-        pass
+        return self.buf.is_full()
 
     def add(self, item):
-        pass
+        assert not self.is_full()
+        return self.buf.unshift(item)
 
     def remove(self):
-        pass
+        return self.buf.pop()
 
     def __len__(self):
-        pass
+        return len(self.buf)
 
 
 # TODO

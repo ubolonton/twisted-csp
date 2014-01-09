@@ -4,6 +4,6 @@ import csp
 def main():
     chan = csp.Channel()
     print "will block"
-    yield chan.put("channel")
+    yield csp.put(chan, "channel")
     # Will not get here
-    print (yield chan.take())
+    print (yield csp.take(chan))

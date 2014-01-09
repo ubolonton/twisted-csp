@@ -8,18 +8,18 @@ class Ball:
 
 def player(name, table):
     while True:
-        ball = yield table.take()
+        ball = yield csp.take(table)
         ball.hits += 1
         print name, ball.hits
         yield csp.wait(0.1)
-        yield table.put(ball)
+        yield csp.put(table, ball)
 
 
 def main():
     table = csp.Channel()
 
-    yield csp.go(player("ping", table))
-    yield csp.go(player("pong", table))
+    csp.go(player("ping", table))
+    csp.go(player("pong", table))
 
-    yield table.put(Ball())
+    yield csp.put(table, Ball())
     yield csp.wait(1)

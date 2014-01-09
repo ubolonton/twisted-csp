@@ -10,7 +10,7 @@ def boring(message):
     def _do():
         i = 0
         while True:
-            yield channel.put("%s %d" % (message, i))
+            yield csp.put(channel, "%s %d" % (message, i))
             yield csp.wait(random.random())
             i += 1
     csp.go(_do())
@@ -20,5 +20,5 @@ def boring(message):
 def main():
     b = boring("boring!")
     for i in range(5):
-        print "You say: \"%s\"" % (yield b.take())
+        print "You say: \"%s\"" % (yield csp.take(b))
     print "You are boring; I'm leaving."

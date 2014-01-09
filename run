@@ -10,11 +10,8 @@ import csp
 
 def run_twisted_then_call(main):
     def start():
-        def m():
-            for x in main():
-                yield x
-            reactor.stop()
-        csp.go(m())
+        process = csp.go(main())
+        process.onFinish = lambda: reactor.stop()
 
     reactor.callWhenRunning(start)
     reactor.run()

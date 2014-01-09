@@ -45,6 +45,10 @@ class Process:
         except StopIteration:
             print self, "finished"
             return
+            # FIX XXX HACK
+            onFinish = getattr(self, "onFinish", None)
+            if onFinish:
+               onFinish()
 
         if not isinstance(instruction, Instruction):
             self._continue(None)

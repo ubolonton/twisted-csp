@@ -35,7 +35,10 @@ class ManyToManyChannel:
             return Box(None)
 
         while True:
-            taker = self.takes.pop()
+            try:
+                taker = self.takes.pop()
+            except IndexError:
+                taker = None
             # There's a putter in line
             if taker is not None:
                 # And he's still interested
@@ -81,7 +84,10 @@ class ManyToManyChannel:
             return Box(self.buf.remove())
         else:
             while True:
-                putter = self.puts.pop()
+                try:
+                    putter = self.puts.pop()
+                except IndexError:
+                    putter = None
                 if putter is not None:
                     put_handler = putter.handler
                     if put_handler.is_active():
@@ -113,7 +119,10 @@ class ManyToManyChannel:
 
         self.closed = True
         while True:
-            taker = self.takes.pop()
+            try:
+                taker = self.takes.pop()
+            except IndexError:
+                taker = None
             if taker is not None:
                 if taker.is_active():
                     callback = taker.commit()

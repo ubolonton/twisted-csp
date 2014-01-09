@@ -46,6 +46,7 @@ class ManyToManyChannel:
                     # Confirm with both sides and give it to him
                     callback, _ = taker.commit(), handler.commit()
                     # FIX
+                    # print "give waiting taker", callback, value
                     dispatch.run(lambda: callback(value))
                     return Box(None)
                 else:
@@ -54,7 +55,7 @@ class ManyToManyChannel:
             # No taker
             else:
                 # Confirm with putter, and put it on wait
-                if self.buf is not None and not self.buf.full:
+                if self.buf is not None and not self.buf.is_full():
                     handler.commit()
                     self.buf.add(value)
                     return Box(None)
@@ -94,6 +95,7 @@ class ManyToManyChannel:
                     if put_handler.is_active():
                         callback, _ = put_handler.commit(), handler.commit()
                         # XXX Hmm why
+                        # print "release waiting putter", callback
                         dispatch.run(lambda: callback(None))
                         return Box(putter.value)
                     else:

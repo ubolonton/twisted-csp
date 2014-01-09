@@ -18,7 +18,7 @@ Box = collections.namedtuple("Box", ["value"])
 class ManyToManyChannel:
     implements(IChannel)
 
-    def __init__(self, buf):
+    def __init__(self, buf = None):
         self.buf = buf
 
         self.takes = RingBuffer(32)

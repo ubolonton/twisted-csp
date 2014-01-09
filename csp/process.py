@@ -3,6 +3,9 @@ from collections import namedtuple
 from zope.interface import implements
 
 from csp.interfaces import IHandler
+# XXX: No, this should not depend on dispatcher, make a delay channel
+# or sth
+import csp.dispatch as dispatch
 
 Instruction = namedtuple("Instruction", ["op", "data"])
 
@@ -29,35 +32,41 @@ class Process:
     def __init__(self, gen):
         self.gen = gen
 
-    def _channel_responded(self, response):
-        print response
+    def _continue(self, response):
+        # print response
         self.run(response)
 
     def run(self, response = NONE):
-        if response is NONE:
-            instruction = self.gen.next()
-        else:
-            instruction = self.gen.send(response)
+        try:
+            if response is NONE:
+                instruction = self.gen.next()
+            else:
+                instruction = self.gen.send(response)
+        except StopIteration:
+            print self, "finished"
+            return
 
-        assert isinstance(instruction, Instruction)
+        if not isinstance(instruction, Instruction):
+            self._continue(None)
+            return
 
         if instruction.op == "put":
             channel, value = instruction.data
-            result = channel.put(value, FnHandler(self._channel_responded))
+            result = channel.put(value, FnHandler(self._continue))
             if result:
-                self._channel_responded(result.value)
+                self._continue(result.value)
             return
 
         if instruction.op == "take":
             channel = instruction.data
-            result = channel.take(FnHandler(self._channel_responded))
+            result = channel.take(FnHandler(self._continue))
             if result:
-                self._channel_responded(result.value)
+                self._continue(result.value)
             return
 
         if instruction.op == "wait":
             seconds = instruction.data
-            dispatch.queue_delay((lambda: self._channel_responded(None)), seconds)
+            dispatch.queue_delay((lambda: self._continue(None)), seconds)
             return
 
 

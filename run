@@ -12,6 +12,8 @@ def run_twisted_then_call(main):
     def start():
         process = csp.go(main())
         process.onFinish = lambda: reactor.stop()
+        if process.finished:
+            reactor.stop()
 
     reactor.callWhenRunning(start)
     reactor.run()

@@ -31,24 +31,27 @@ NONE = object()
 class Process:
     def __init__(self, gen):
         self.gen = gen
+        self.finished = False
 
     def _continue(self, response):
-        # print response
+        # print self, "got", response
         self.run(response)
 
     def run(self, response = NONE):
         try:
+            # print self, "send", response
             if response is NONE:
                 instruction = self.gen.next()
             else:
                 instruction = self.gen.send(response)
         except StopIteration:
+            self.finished = True
             print self, "finished"
-            return
             # FIX XXX HACK
             onFinish = getattr(self, "onFinish", None)
             if onFinish:
                onFinish()
+            return
 
         if not isinstance(instruction, Instruction):
             self._continue(None)

@@ -76,11 +76,6 @@ class Process:
             dispatch.queue_delay((lambda: self._continue(None)), seconds)
             return
 
-        if instruction.op == "wait":
-            seconds = instruction.data
-            dispatch.queue_delay((lambda: self._continue(None)), seconds)
-            return
-
 
 def put(channel, value):
     return Instruction("put", (channel, value))

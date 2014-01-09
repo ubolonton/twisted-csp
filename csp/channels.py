@@ -93,7 +93,8 @@ class ManyToManyChannel:
                     put_handler = putter.handler
                     if put_handler.is_active():
                         callback, _ = put_handler.commit(), handler.commit()
-                        dispatch.run(callback)
+                        # XXX Hmm why
+                        dispatch.run(lambda: callback(None))
                         return Box(putter.value)
                     else:
                         continue

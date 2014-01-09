@@ -53,14 +53,13 @@ class Process:
                onFinish()
             return
 
-        if not isinstance(instruction, Instruction):
-            self._continue(None)
-            return
+        assert isinstance(instruction, Instruction)
 
         if instruction.op == "put":
             channel, value = instruction.data
             result = channel.put(value, FnHandler(self._continue))
             if result:
+                # print self, "immediate put", result.value
                 self._continue(result.value)
             return
 
@@ -68,6 +67,7 @@ class Process:
             channel = instruction.data
             result = channel.take(FnHandler(self._continue))
             if result:
+                # print self, "immediate take", result.value
                 self._continue(result.value)
             return
 

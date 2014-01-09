@@ -1,4 +1,4 @@
-from csp.process import Process, put, take
+from csp.process import Process, put, take, wait
 
 from csp.channels import ManyToManyChannel as Channel
 

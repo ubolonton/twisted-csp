@@ -43,12 +43,22 @@ class Process:
 
         if instruction.op == "put":
             channel, value = instruction.data
-            channel.put(value, FnHandler(self._channel_responded))
+            result = channel.put(value, FnHandler(self._channel_responded))
+            if result:
+                self._channel_responded(result.value)
             return
 
         if instruction.op == "take":
             channel = instruction.data
-            channel.take(FnHandler(self._channel_responded))
+            result = channel.take(FnHandler(self._channel_responded))
+            if result:
+                self._channel_responded(result.value)
+            return
+
+        if instruction.op == "wait":
+            seconds = instruction.data
+            dispatch.queue_delay((lambda: self._channel_responded(None)), seconds)
+            return
 
 
 def put(channel, value):

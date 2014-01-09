@@ -15,7 +15,7 @@ class AltHandler:
         return self.flag[0]
 
     def commit(self):
-        self.flag = [False]
+        self.flag[0] = False
         return self.f
 
 

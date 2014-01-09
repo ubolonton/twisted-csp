@@ -1,5 +1,4 @@
 from zope.interface import implements
-
 from collections import deque
 
 from csp.interfaces import IBuffer

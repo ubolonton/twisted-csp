@@ -1,11 +1,11 @@
-from collections import namedtuple
-
 from zope.interface import implements
 
-from csp.interfaces import IHandler
+from collections import namedtuple
+
 # XXX: No, this should not depend on dispatcher, make a delay channel
 # or sth
-import csp.dispatch as dispatch
+from csp import dispatch as dispatch
+from csp.interfaces import IHandler
 
 Instruction = namedtuple("Instruction", ["op", "data"])
 

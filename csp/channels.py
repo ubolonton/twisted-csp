@@ -1,18 +1,17 @@
-import collections
-
 from zope.interface import implements
+from collections import namedtuple
 
+from csp import dispatch
 from csp.interfaces import IChannel
 from csp.buffers import RingBuffer
 
-import csp.dispatch as dispatch
 
 MAX_DIRTY = 64
 MAX_QUEUE_SIZE = 1024
 
-PutBox = collections.namedtuple("PutBox", ["handler", "value"])
+PutBox = namedtuple("PutBox", ["handler", "value"])
 
-Box = collections.namedtuple("Box", ["value"])
+Box = namedtuple("Box", ["value"])
 
 
 class ManyToManyChannel:

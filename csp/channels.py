@@ -45,7 +45,8 @@ class ManyToManyChannel:
                 if taker.is_active():
                     # Confirm with both sides and give it to him
                     callback, _ = taker.commit(), handler.commit()
-                    dispatch.run(callback, value)
+                    # FIX
+                    dispatch.run(lambda: callback(value))
                     return Box(None)
                 else:
                     continue
@@ -126,6 +127,6 @@ class ManyToManyChannel:
             if taker is not None:
                 if taker.is_active():
                     callback = taker.commit()
-                    dispatch.run(callback, None)
+                    dispatch.run(lambda: callback(None))
             else:
                 break

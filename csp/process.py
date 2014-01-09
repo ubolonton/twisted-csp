@@ -6,6 +6,7 @@ from collections import namedtuple
 # or sth
 from csp import dispatch as dispatch
 from csp.interfaces import IHandler
+from csp.select import do_alts
 
 Instruction = namedtuple("Instruction", ["op", "data"])
 
@@ -76,6 +77,13 @@ class Process:
             dispatch.queue_delay((lambda: self._continue(None)), seconds)
             return
 
+        if instruction.op == "alts":
+            operations = instruction.data
+            result = do_alts(operations, self._continue)
+            if result:
+                self._continue(result.value)
+            return
+
 
 def put(channel, value):
     return Instruction("put", (channel, value))
@@ -87,3 +95,8 @@ def take(channel):
 
 def wait(seconds):
     return Instruction("wait", seconds)
+
+
+# TODO: Re-organize code
+def alts(operations):
+    return Instruction("alts", operations)

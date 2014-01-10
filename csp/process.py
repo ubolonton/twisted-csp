@@ -36,7 +36,8 @@ class Process:
 
     def _continue(self, response):
         # print self, "got", response
-        self.run(response)
+        # XXX: Is there be a better way to avoid infinite recursion?
+        dispatch.run(lambda: self.run(response))
 
     def run(self, response = NONE):
         if self.finished:

@@ -8,13 +8,25 @@ def produce(chan, value):
 
 def main():
     chans = []
-    for i in range(10):
+    for i in range(20):
         chan = csp.Channel()
         csp.go(produce(chan, i))
         chans.append(chan)
 
-    yield csp.wait(0.3)
+    def timeout(seconds):
+        chan = csp.Channel()
+        def t():
+            yield csp.wait(seconds)
+            chan.close()
+        csp.go(t())
+        return chan
+
+    chans.append(timeout(0.3))
 
     while True:
         value, chan = yield csp.alts(chans)
-        print value
+        if value is None:
+            print "time out"
+            break
+        else:
+            print value

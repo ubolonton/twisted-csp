@@ -1,4 +1,5 @@
 from zope.interface import implements
+from collections import namedtuple
 from random import shuffle
 
 from csp.interfaces import IHandler
@@ -19,6 +20,9 @@ class AltHandler:
         return self.f
 
 
+AltResult = namedtuple("AltResult", ["value", "channel"])
+
+
 # TODO: Support options
 def do_alts(operations, handler):
     # XXX Hmm
@@ -31,12 +35,12 @@ def do_alts(operations, handler):
     for operation in operations:
         if isinstance(operation, (list, tuple)):
             port, value = operation
-            result = port.put(value, AltHandler(flag, lambda: handler((None, port))))
+            result = port.put(value, AltHandler(flag, lambda: handler(AltResult(None, port))))
         else:
             port = operation
-            result = port.take(AltHandler(flag, lambda value: handler((value, port))))
+            result = port.take(AltHandler(flag, lambda value: handler(AltResult(value, port))))
         if result:
             assert isinstance(result, Box)
-            return Box((result.value, port))
+            return Box(AltResult(result.value, port))
 
     # return None

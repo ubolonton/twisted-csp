@@ -39,6 +39,9 @@ class Process:
         self.run(response)
 
     def run(self, response = NONE):
+        if self.finished:
+            return
+
         try:
             # print self, "send", response
             if response is NONE:

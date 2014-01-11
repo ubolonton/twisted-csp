@@ -17,7 +17,7 @@ class RingBuffer:
         self.ring.append(item)
 
     def unbounded_unshift(self, item):
-        if self.is_full():
+        if len(self.ring) == self.ring.maxlen:
             self.resize()
         self.unshift(item)
 
@@ -34,9 +34,6 @@ class RingBuffer:
             if keep(item):
                 self.ring.append(item)
 
-    def is_full(self):
-        return len(self.ring) == self.ring.maxlen
-
     def __len__(self):
         return len(self.ring)
 
@@ -44,33 +41,72 @@ class RingBuffer:
         return "<RingBuffer %s>" % self.ring.__repr__()
 
 
-# TODO FIX: Do we really need to wrap RingBuffer like this?
 class FixedBuffer:
     implements(IBuffer)
 
     def __init__(self, size):
         assert size > 0
-        self.buf = RingBuffer(size)
+        self.buf = deque((), size)
 
     def is_full(self):
-        return self.buf.is_full()
+        return len(self.buf) == self.buf.maxlen
 
     def add(self, item):
         assert not self.is_full()
-        return self.buf.unshift(item)
+        return self.buf.append(item)
 
     def remove(self):
-        return self.buf.pop()
+        return self.buf.popleft()
 
     def __len__(self):
         return len(self.buf)
 
+    def __repr__(self):
+        return "<FixedBuffer %s>" % self.buf.__repr__()
 
-# TODO
+
 class DroppingBuffer:
     implements(IBuffer)
 
+    def __init__(self, size):
+        assert size > 0
+        self.buf = deque((), size)
 
-# TODO
+    def is_full(self):
+        return False
+
+    def add(self, item):
+        if len(self.buf) < self.buf.maxlen:
+            return self.buf.append(item)
+
+    def remove(self):
+        return self.buf.popleft()
+
+    def __len__(self):
+        return len(self.buf)
+
+    def __repr__(self):
+        return "<DroppingBuffer %s>" % self.buf.__repr__()
+
+
 class SlidingBuffer:
     implements(IBuffer)
+
+    def __init__(self, size):
+        assert size > 0
+        self.buf = deque((), size)
+
+    def is_full(self):
+        return False
+
+    def add(self, item):
+        return self.buf.append(item)
+
+    def remove(self):
+        return self.buf.popleft()
+
+    def __len__(self):
+        return len(self.buf)
+
+    def __repr__(self):
+        return "<SlidingBuffer %s>" % self.buf.__repr__()

@@ -3,7 +3,7 @@ from collections import deque
 
 from csp.interfaces import IBuffer
 
-# TODO: Check the performance charateristics
+# TODO: Check the performance characteristics
 
 class RingBuffer:
 

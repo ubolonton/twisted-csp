@@ -6,3 +6,8 @@ def go(gen):
     process = Process(gen)
     process.run()
     return process
+
+
+# For API consistency (sort of)
+def close(channel):
+    return channel.close()

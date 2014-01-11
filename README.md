@@ -1,5 +1,8 @@
 Communicating sequential processes for Twisted. Channels like Go, or Clojure `core.async`.
 
+TODO: Write doc
+TODO: Update this README
+
 **WARNING: This is currently a toy.**
 
 # Requirements

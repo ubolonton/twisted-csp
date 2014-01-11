@@ -28,7 +28,7 @@ class ManyToManyChannel:
 
     def put(self, value, handler):
         if value is None:
-            raise Exception("Cannot put None on a channel")
+            raise Exception("Cannot put None on a channel.")
 
         if self.closed or not handler.is_active():
             return Box(None)
@@ -70,7 +70,7 @@ class ManyToManyChannel:
                         self.dirty_puts += 1
 
                     if len(self.puts) >= MAX_QUEUE_SIZE:
-                        raise Exception("Max queue size reached")
+                        raise Exception("No more than %d pending puts are allowed on a single channel." % MAX_QUEUE_SIZE)
 
                     # Get the putter in line
                     self.puts.unbounded_unshift(PutBox(handler, value))
@@ -111,7 +111,7 @@ class ManyToManyChannel:
                             self.dirty_takes += 1
 
                         if len(self.takes) >= MAX_QUEUE_SIZE:
-                            raise Exception("Max queue size reached")
+                            raise Exception("No more than %d pending takes are allowed on a single channel." % MAX_QUEUE_SIZE)
 
                         self.takes.unbounded_unshift(handler)
                 break

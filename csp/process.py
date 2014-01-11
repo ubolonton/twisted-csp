@@ -10,8 +10,6 @@ from csp.select import do_alts
 
 Instruction = namedtuple("Instruction", ["op", "data"])
 
-# PutData = namedtuple("PutData", ["channel", "value"])
-
 
 # FIX: This is not efficient, right? Python has no "reify"
 class FnHandler:

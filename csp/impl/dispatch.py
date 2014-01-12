@@ -1,6 +1,6 @@
 from twisted.internet import reactor
 
-from csp.buffers import RingBuffer
+from csp.impl.buffers import RingBuffer
 
 class TwistedDispatcher:
 

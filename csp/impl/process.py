@@ -2,9 +2,9 @@ from zope.interface import implements
 
 from collections import namedtuple
 
-from csp import dispatch as dispatch
-from csp.interfaces import IHandler
-from csp.select import do_alts
+from csp.impl import dispatch
+from csp.impl.interfaces import IHandler
+from csp.impl.select import do_alts
 
 Instruction = namedtuple("Instruction", ["op", "data"])
 

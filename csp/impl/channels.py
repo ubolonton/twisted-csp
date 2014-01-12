@@ -1,9 +1,9 @@
 from zope.interface import implements
 from collections import namedtuple
 
-from csp import dispatch
-from csp.interfaces import IChannel
-from csp.buffers import RingBuffer
+from csp.impl import dispatch
+from csp.impl.interfaces import IChannel
+from csp.impl.buffers import RingBuffer
 
 
 MAX_DIRTY = 64

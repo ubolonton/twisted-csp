@@ -2,8 +2,8 @@ from zope.interface import implements
 from collections import namedtuple
 from random import shuffle
 
-from csp.interfaces import IHandler
-from csp.channels import Box
+from csp.impl.interfaces import IHandler
+from csp.impl.channels import Box
 
 class AltHandler:
     implements(IHandler)

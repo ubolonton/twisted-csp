@@ -1,10 +1,9 @@
 # API
-from csp.process import put, take, wait, alts, stop
-from csp.channels import ManyToManyChannel as Channel
+from csp.impl.process import put, take, wait, alts, stop
+from csp.impl.channels import ManyToManyChannel as Channel
 
-from csp.process import Process, FnHandler
-from csp.buffers import FixedBuffer
-
+from csp.impl.process import Process, FnHandler
+from csp.impl.buffers import FixedBuffer
 
 def go(gen):
     channel = Channel(FixedBuffer(1))

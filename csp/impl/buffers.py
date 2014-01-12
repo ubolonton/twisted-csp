@@ -1,7 +1,7 @@
 from zope.interface import implements
 from collections import deque
 
-from csp.interfaces import IBuffer
+from csp.impl.interfaces import IBuffer
 
 # TODO: Check the performance characteristics
 

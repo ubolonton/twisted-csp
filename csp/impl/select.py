@@ -32,15 +32,21 @@ def do_alts(operations, handler):
     # TODO: Accept a priority function or something
     shuffle(operations)
 
+    # XXX: Python uses function-scope not block-scope. Therefore
+    # "port" is mutably shared by the iterations. The "lambda port:" trick
+    # is used to pass the values of "port" to "handler", instead of
+    # passing the mutable reference.
     for operation in operations:
         if isinstance(operation, (list, tuple)):
             port, value = operation
-            result = port.put(value, AltHandler(flag, lambda: handler(AltResult(None, port))))
+            result = port.put(value, (
+                lambda port: AltHandler(flag, lambda: handler(AltResult(None, port)))
+            )(port))
         else:
             port = operation
-            result = port.take(AltHandler(flag, lambda value: handler(AltResult(value, port))))
+            result = port.take((
+                lambda port: AltHandler(flag, lambda value: handler(AltResult(value, port)))
+            )(port))
         if result:
             assert isinstance(result, Box)
             return Box(AltResult(result.value, port))
-
-    # return None

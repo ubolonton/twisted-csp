@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from csp.impl import dispatch
 from csp.impl.interfaces import IChannel
-from csp.impl.buffers import RingBuffer
+from csp.impl.buffers import RingBuffer, FixedBuffer
 
 
 MAX_DIRTY = 64
@@ -17,8 +17,13 @@ Box = namedtuple("Box", ["value"])
 class ManyToManyChannel:
     implements(IChannel)
 
-    def __init__(self, buf = None):
-        self.buf = buf
+    def __init__(self, buf_or_n = None):
+        if buf_or_n == 0:
+            buf_or_n = None
+        if isinstance(buf_or_n, int):
+            self.buf = FixedBuffer(buf_or_n)
+        else:
+            self.buf = buf_or_n
 
         self.takes = RingBuffer(32)
         self.puts = RingBuffer(32)

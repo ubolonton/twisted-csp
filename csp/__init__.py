@@ -8,7 +8,7 @@ import csp.impl.process
 
 
 def go(gen):
-    channel = Channel(FixedBuffer(1))
+    channel = Channel(1)
     def done(value):
         if value is not None:
             channel.put(value, csp.impl.process.FnHandler(lambda: None))

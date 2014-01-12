@@ -22,6 +22,21 @@ class FnHandler:
     def commit(self):
         return self.f
 
+# TODO: Shouldn't these 2 (and FnHandler) be in "channels" module?
+
+
+def put_then_callback(channel, value, callback):
+    result = channel.put(value, FnHandler(callback))
+    if result:
+        callback(result.value)
+
+
+def take_then_callback(channel, callback):
+    result = channel.take(FnHandler(callback))
+    if result:
+        callback(result.value)
+
+
 # XXX
 NONE = object()
 
@@ -74,19 +89,13 @@ class Process:
 
         if instruction.op == "put":
             channel, value = instruction.data
-            result = channel.put(value, FnHandler(self._continue))
-            if result:
-                # print self, "immediate put", result.value
-                self._continue(result.value)
+            put_then_callback(channel, value, self._continue)
             return
 
         # TODO: Should we throw if the value is an exception?
         if instruction.op == "take":
             channel = instruction.data
-            result = channel.take(FnHandler(self._continue))
-            if result:
-                # print self, "immediate take", result.value
-                self._continue(result.value)
+            take_then_callback(channel, self._continue)
             return
 
         # TODO: Timeout channel instead?

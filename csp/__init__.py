@@ -8,11 +8,15 @@ from csp.impl.timers import timeout
 import csp.impl.process
 
 
+def no_op(*arg):
+    pass
+
+
 def go(gen):
     channel = Channel(1)
     def done(value):
         if value is not None:
-            put_then_callback(channel, value, lambda _: None)
+            put_then_callback(channel, value, no_op)
         channel.close()
 
     process = csp.impl.process.Process(gen, done)

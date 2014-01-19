@@ -24,7 +24,7 @@ AltResult = namedtuple("AltResult", ["value", "channel"])
 
 
 # TODO: Support options
-def do_alts(operations, handler):
+def do_alts(operations, callback):
     # XXX Hmm
     assert len(operations) > 0
     flag = [True]
@@ -34,18 +34,18 @@ def do_alts(operations, handler):
 
     # XXX: Python uses function-scope not block-scope. Therefore
     # "port" is mutably shared by the iterations. The "lambda port:" trick
-    # is used to pass the values of "port" to "handler", instead of
+    # is used to pass the values of "port" to "callback", instead of
     # passing the mutable reference.
     for operation in operations:
         if isinstance(operation, (list, tuple)):
             port, value = operation
             result = port.put(value, (
-                lambda port: AltHandler(flag, lambda: handler(AltResult(None, port)))
+                lambda port: AltHandler(flag, lambda _: callback(AltResult(None, port)))
             )(port))
         else:
             port = operation
             result = port.take((
-                lambda port: AltHandler(flag, lambda value: handler(AltResult(value, port)))
+                lambda port: AltHandler(flag, lambda value: callback(AltResult(value, port)))
             )(port))
         if result:
             assert isinstance(result, Box)

@@ -53,7 +53,6 @@ class ManyToManyChannel:
                     # Confirm with both sides and give it to him
                     callback, _ = taker.commit(), handler.commit()
                     # FIX
-                    # print "give waiting taker", callback, value
                     dispatch.run(lambda: callback(value))
                     return Box(None)
                 else:
@@ -101,8 +100,7 @@ class ManyToManyChannel:
                     put_handler = putter.handler
                     if put_handler.is_active():
                         callback, _ = put_handler.commit(), handler.commit()
-                        # XXX Hmm why
-                        # print "release waiting putter", callback
+                        # XXX Why don't we just pass no param???
                         dispatch.run(lambda: callback(None))
                         return Box(putter.value)
                     else:

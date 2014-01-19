@@ -18,6 +18,10 @@ Box = namedtuple("Box", ["value"])
 
 
 class ManyToManyChannel:
+    """Creates a channel with an optional buffer. If buf_or_n is a number,
+    a fixed buffer of that size is created and used.
+    """
+
     implements(IChannel)
 
     def __init__(self, buf_or_n = None):

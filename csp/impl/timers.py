@@ -7,7 +7,8 @@ from csp.impl.channels import ManyToManyChannel as Channel
 
 def timeout(seconds):
     """Returns a channel that will close after the specified timeout (in
-    seconds)."""
+    seconds).
+    """
     channel = Channel()
     def done():
         channel.close()

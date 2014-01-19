@@ -53,6 +53,9 @@ class RingBuffer:
 
 
 class FixedBuffer:
+    """Creates a fixed buffer of given size. When full, puts will block.
+    """
+
     implements(IBuffer)
 
     def __init__(self, size):
@@ -77,6 +80,10 @@ class FixedBuffer:
 
 
 class DroppingBuffer:
+    """Creates a fixed buffer of given size. When full, puts will complete
+    but value will be dropped.
+    """
+
     implements(IBuffer)
 
     def __init__(self, size):
@@ -101,6 +108,10 @@ class DroppingBuffer:
 
 
 class SlidingBuffer:
+    """Creates a fixed buffer of given size. When full, puts will complete
+    but the oldest values will be dropped to make place.
+    """
+
     implements(IBuffer)
 
     def __init__(self, size):

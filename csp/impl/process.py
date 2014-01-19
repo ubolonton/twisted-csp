@@ -26,8 +26,8 @@ class FnHandler:
 
 
 def put_then_callback(channel, value, callback):
-    """Puts a value on the channel, calling the supplied callback with
-    None when done.
+    """Puts a value on the channel, calling the supplied callback when
+    done.
     """
     result = channel.put(value, FnHandler(callback))
     if result:
@@ -36,7 +36,8 @@ def put_then_callback(channel, value, callback):
 
 def take_then_callback(channel, callback):
     """Takes from the channel, calling the supplied callback with the
-    received value when done."""
+    received value when done.
+    """
     result = channel.take(FnHandler(callback))
     if result:
         callback(result.value)

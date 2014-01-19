@@ -31,7 +31,7 @@ def put_then_callback(channel, value, callback):
     """
     result = channel.put(value, FnHandler(callback))
     if result:
-        callback(result.value)
+        callback()
 
 
 def take_then_callback(channel, callback):
@@ -94,7 +94,7 @@ class Process:
 
         if instruction.op == "put":
             channel, value = instruction.data
-            put_then_callback(channel, value, self._continue)
+            put_then_callback(channel, value, lambda: self._continue(None))
             return
 
         # TODO: Should we throw if the value is an exception?

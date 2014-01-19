@@ -3,6 +3,11 @@ Communicating sequential processes for Twisted. Channels like Go, or Clojure `co
 TODO: Write doc
 TODO: Update this README
 
+As this is an almost exact port of Clojurescript's core.async, you can learn more about the internals by watching http://www.youtube.com/watch?v=WSgg-TQLsdw&feature=youtu.be&a
+
+This works only in a single-threaded environment (e.g. reactor.callInThread must be used when needed)
+
+
 **WARNING: This is currently a toy.**
 
 # Requirements

@@ -3,7 +3,8 @@ from collections import deque
 
 from csp.impl.interfaces import IBuffer
 
-# TODO: Check the performance characteristics
+# TODO: Check the performance characteristics. A hand-rolled
+# linked-list based ring buffer may be better.
 
 class RingBuffer:
 
@@ -11,20 +12,30 @@ class RingBuffer:
         self.ring = deque(iterable, size)
 
     def pop(self):
+        """Returns the oldest item, removing it from the buffer.
+        """
         return self.ring.popleft()
 
     def unshift(self, item):
+        """Adds 1 item, dropping oldest item to make place if needed.
+        """
         self.ring.append(item)
 
     def unbounded_unshift(self, item):
+        """Adds 1 item, extending the buffer to make place if needed.
+        """
         if len(self.ring) == self.ring.maxlen:
             self.resize()
         self.unshift(item)
 
     def resize(self):
+        """Doubles the size of the buffer.
+        """
         self.ring = deque(self.ring, self.ring.maxlen * 2)
 
     def cleanup(self, keep):
+        """Removes items that do not match the specified predicate.
+        """
         i, n = 0, len(self.ring)
         while True:
             i += 1

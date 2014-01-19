@@ -31,6 +31,8 @@ class TwistedDispatcher:
 
             task()
 
+            # TODO: Maybe stop after a max amount of time rather than
+            # a max number of tasks.
             count += 1
             if count >= self.TASK_BATCH_SIZE:
                 break

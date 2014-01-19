@@ -26,12 +26,17 @@ class FnHandler:
 
 
 def put_then_callback(channel, value, callback):
+    """Puts a value on the channel, calling the supplied callback with
+    None when done.
+    """
     result = channel.put(value, FnHandler(callback))
     if result:
         callback(result.value)
 
 
 def take_then_callback(channel, callback):
+    """Takes from the channel, calling the supplied callback with the
+    received value when done."""
     result = channel.take(FnHandler(callback))
     if result:
         callback(result.value)
@@ -114,21 +119,70 @@ class Process:
 
 
 def put(channel, value):
+    """Puts a value onto the channel.
+
+    Must be used with "yield" inside a go function.
+
+    yield put(channel, "value")
+    """
     return Instruction("put", (channel, value))
 
 
 def take(channel):
+    """Takes a value from the channel.
+
+    Must be used with "yield" inside a go function.
+
+    value = yield take(channel)
+    """
     return Instruction("take", channel)
 
 
 def wait(seconds):
+    """Pauses the current go function.
+
+    Must be used with "yield" inside a go function.
+
+    # "Sleeps" for 0.5 seconds (but does not tie up the thread)
+    yield wait(0.5)
+    """
     return Instruction("wait", seconds)
 
 
 # TODO: Re-organize code
+
+
 def alts(operations):
+    """Completes at most one of the specified channel operations. Each
+    operation must either be a channel to take from, or a tuple of
+    (channel-to-put-onto, value-to-put).
+
+    If more than 1 operation is ready, a non-deterministic choice will
+    be made.
+
+    Must be used with "yield" inside a go function.
+
+    value = yield alts([channel, ()])
+    """
     return Instruction("alts", operations)
 
 
-def stop(value):
+# TODO: Better doc
+def stop(value=None):
+    """Returns from the current go function with the supplied value.
+
+    It's dual to the "return" keyword in normal functions.
+
+    def proc(early):
+        yield wait(0.5)
+        if early:
+            yield stop("early")
+
+        yield stop("late")
+
+    # Will have "early" put on it
+    chan1 = go(proc(True))
+    # Will have "late" put on it
+    chan2 = go(proc(False))
+    """
     return Instruction("stop", value)

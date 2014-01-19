@@ -13,6 +13,12 @@ def no_op(*arg):
 
 
 def go(gen):
+    """Asynchronously executes a "go" function (a generator returned by a
+    function following certain conventions, to be exact).
+
+    Returns a channel that will receive the result of the go function
+    when it completes.
+    """
     channel = Channel(1)
     def done(value):
         if value is not None:
@@ -26,4 +32,11 @@ def go(gen):
 
 # For API consistency (sort of)
 def close(channel):
+    """Closes a channel.
+
+    - Pending puts are ignored.
+    - Pending takes are flushed with None.
+    - Future puts succeed immediately.
+    - Future takes receive immediately None.
+    """
     return channel.close()

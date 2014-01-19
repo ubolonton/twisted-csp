@@ -13,6 +13,9 @@ PutBox = namedtuple("PutBox", ["handler", "value"])
 
 Box = namedtuple("Box", ["value"])
 
+# TODO: 2 buffers can be replaced with 1 buffer + 1 flag: pending
+# takes/puts. Should we do that?
+
 
 class ManyToManyChannel:
     implements(IChannel)
@@ -68,7 +71,7 @@ class ManyToManyChannel:
                     # But maybe some putters are no longer interested.
                     # Remove them...
                     if self.dirty_puts > MAX_DIRTY:
-                        # FIX: Putter or sth
+                        # Sort of garbage collection
                         self.puts.cleanup(keep = lambda putter: putter.handler.is_active())
                         self.dirty_puts = 0
                     else:
@@ -125,11 +128,17 @@ class ManyToManyChannel:
         if self.closed:
             return
 
+        # The current semantics is that a "close" is forceful, which
+        # means any pending puts or buffered values will be ignored.
+        # Is that actually a good thing? Ignoring buffered values
+        # sounds ok, but no response to pending puts?
+
         self.closed = True
         while True:
             try:
                 taker = self.takes.pop()
             except IndexError:
+                # TODO: Why not just continue?
                 taker = None
             if taker is not None:
                 if taker.is_active():

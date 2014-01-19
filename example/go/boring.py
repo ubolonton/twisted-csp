@@ -6,15 +6,15 @@ import random
 
 
 def boring(message):
-    channel = csp.Channel()
+    c = csp.Channel()
     def _do():
         i = 0
         while True:
-            yield csp.put(channel, "%s %d" % (message, i))
+            yield csp.put(c, "%s %d" % (message, i))
             yield csp.wait(random.random())
             i += 1
     csp.go(_do())
-    return channel
+    return c
 
 
 def main():

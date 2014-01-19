@@ -1,9 +1,9 @@
-import csp
+from csp import Channel, put, take
 
 
 def main():
-    chan = csp.Channel()
+    chan = Channel()
     print "will block"
-    yield csp.put(chan, "channel")
+    yield put(chan, "channel")
     # Will not get here
-    print (yield csp.take(chan))
+    print (yield take(chan))

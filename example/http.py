@@ -1,14 +1,14 @@
-import csp
+from csp import Channel, alts, timeout, put_then_callback, no_op
 
 from twisted.web.client import getPage
 
 
 def request(url):
-    channel = csp.Channel(1)
+    channel = Channel(1)
     def ok(value):
-        csp.put_then_callback(channel, (value, None), csp.no_op)
+        put_then_callback(channel, (value, None), no_op)
     def error(failure):
-        csp.put_then_callback(channel, (None, failure), csp.no_op)
+        put_then_callback(channel, (None, failure), no_op)
     getPage(url).addCallback(ok).addErrback(error)
     return channel
 
@@ -22,8 +22,8 @@ def main():
         print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         print url, dt, "seconds"
         c = request(url)
-        t = csp.timeout(dt)
-        value, chan = yield csp.alts([c, t])
+        t = timeout(dt)
+        value, chan = yield alts([c, t])
         if chan is c:
             result, error = value
             if error:

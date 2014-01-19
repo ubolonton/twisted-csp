@@ -1,25 +1,25 @@
 # http://talks.golang.org/2012/concurrency.slide#39
 # Daisy-chain
 
-import csp
+from csp import Channel, put, take, go
 
 
 def f(left, right):
-    yield csp.put(left, 1 + (yield csp.take(right)))
+    yield put(left, 1 + (yield take(right)))
 
 
 def main():
     n = 1000
-    leftmost = csp.Channel()
+    leftmost = Channel()
     right = leftmost
     left = leftmost
     for i in range(n):
-        right = csp.Channel()
-        csp.go(f(left, right))
+        right = Channel()
+        go(f(left, right))
         left = right
 
     def start(c):
-        yield csp.put(c, 1)
+        yield put(c, 1)
 
-    csp.go(start(right))
-    print (yield csp.take(leftmost))
+    go(start(right))
+    print (yield take(leftmost))

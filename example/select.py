@@ -1,30 +1,30 @@
-import csp
+from csp import Channel, put, take, go, alts, wait
 
 
 def produce(chan, value):
-    yield csp.wait(0.1)
-    yield csp.put(chan, value)
+    yield wait(0.1)
+    yield put(chan, value)
 
 
 def main():
     chans = []
     for i in range(20):
-        chan = csp.Channel()
-        csp.go(produce(chan, i))
+        chan = Channel()
+        go(produce(chan, i))
         chans.append(chan)
 
     def timeout(seconds):
-        chan = csp.Channel()
+        chan = Channel()
         def t():
-            yield csp.wait(seconds)
+            yield wait(seconds)
             chan.close()
-        csp.go(t())
+        go(t())
         return chan
 
     chans.append(timeout(0.3))
 
     while True:
-        value, chan = yield csp.alts(chans)
+        value, chan = yield alts(chans)
         if value is None:
             print "time out"
             break

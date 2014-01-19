@@ -1,9 +1,9 @@
-import csp
+from csp import Channel, put, take
 
 
 def main():
-    chan = csp.Channel(csp.impl.buffers.FixedBuffer(2))
-    yield csp.put(chan, "buffered")
-    yield csp.put(chan, "channel")
-    print (yield csp.take(chan))
-    print (yield csp.take(chan))
+    chan = Channel(2)
+    yield put(chan, "buffered")
+    yield put(chan, "channel")
+    print (yield take(chan))
+    print (yield take(chan))

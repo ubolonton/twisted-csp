@@ -1,18 +1,18 @@
-import csp
+from csp import go, wait, take, stop
 
 
 def lazy_echo(x):
-    yield csp.wait(0.1)
+    yield wait(0.1)
     print "I'm done"
-    yield csp.stop(x)
+    yield stop(x)
 
 
 def main():
-    chan = csp.go(lazy_echo(1))
-    print (yield csp.take(chan))
+    chan = go(lazy_echo(1))
+    print (yield take(chan))
 
-    chan = csp.go(lazy_echo(2))
-    yield csp.wait(1)
-    print (yield csp.take(chan))
+    chan = go(lazy_echo(2))
+    yield wait(1)
+    print (yield take(chan))
 
-    yield csp.stop("Done")
+    yield stop("Done")

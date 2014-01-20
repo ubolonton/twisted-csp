@@ -149,6 +149,8 @@ pong Ball's gone
 - Cooperative multi-processing (not sure if this is a big problem though).
 
 # TODO
+- Multiplexing, mixing, publishing/subscribing.
+- Channel operations (map, filter, reduce...).
 - Support multi-threaded environment (porting Clojure's `core.async` not Clojurescript's).
 - Write **tests**.
 - Think of a sensible error handling strategy (I think this should be decide by client code not library code though).

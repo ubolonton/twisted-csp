@@ -9,17 +9,14 @@ import csp
 
 
 def run_twisted_then_call(main):
-    def start():
-        _, process = csp.go(main(), reactor)
-        # XXX: Callback, not polling
-        def check():
-            if process._done:
-                reactor.stop()
-            else:
-                reactor.callLater(0.1, check)
-        check()
+    def run_main():
+        channel = csp.go(main(), True)
+        value = yield csp.take(channel)
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "main returned", value
+        reactor.stop()
 
-    reactor.callWhenRunning(start)
+    reactor.callWhenRunning(lambda: csp.go(run_main()))
     reactor.run()
 
 

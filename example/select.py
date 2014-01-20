@@ -1,41 +1,32 @@
-import csp
+from csp import Channel, put, take, go, alts, wait
 
 
-
-@csp.process
-def one(chan):
-    start, end = yield csp.wait(0.5)
-    print end - start, start, end
-    yield chan.put("one")
-
-
-@csp.process
-def two(chan):
-    start, end = yield csp.wait(0.5)
-    print end - start, start, end
-    yield chan.put("two")
-
-
-def q(chan):
-    start, end = yield csp.wait(0.5)
-    print end - start, start, end
-    yield chan.put(None)
+def produce(chan, value):
+    yield wait(0.1)
+    yield put(chan, value)
 
 
 def main():
-    chan1 = csp.Channel()
-    chan2 = csp.Channel()
-    quit = csp.Channel()
+    chans = []
+    for i in range(20):
+        chan = Channel()
+        go(produce(chan, i))
+        chans.append(chan)
 
-    one(chan1)
-    two(chan2)
-    csp.go(q(quit))
+    def timeout(seconds):
+        chan = Channel()
+        def t():
+            yield wait(seconds)
+            chan.close()
+        go(t())
+        return chan
+
+    chans.append(timeout(0.3))
 
     while True:
-        chan = yield csp.select(chan1, chan2, quit)
-        if chan is chan1:
-            print "1", (yield chan1.take())
-        if chan is chan2:
-            print "2", (yield chan2.take())
-        if chan is quit:
-            print "quit", (yield quit.take())
+        value, chan = yield alts(chans)
+        if value is None:
+            print "time out"
+            break
+        else:
+            print value

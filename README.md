@@ -1,6 +1,25 @@
-Communicating sequential processes for Twisted. Channels like Go, or Clojure `core.async`.
+Communicating sequential processes for Twisted. Channels like Go, or Clojurescript's `core.async`.
 
-**WARNING: This is currently a toy.**
+This is a very close port of Clojurescript's `core.async`. The significant difference is that light-weight processes are implemented using generators (`yield`) instead of macros.
+
+- Channel operations must happen inside "light-weight processes" (code flows, not actual threads).
+- Light-weight processes are spawn by calling `go` on generators.
+- Most channel operations must follow the form of `yield do_sth(...)`.
+```python
+def slow_pipe(input, output):
+    while True:
+        value = yield take(input)
+        yield wait(0.5)
+        if value is None: # input closed
+            close(output)
+            yield stop()
+        else:
+            yield put(output, value)
+
+go(slow_pipe(chan1, chan2))
+```
+
+**WARNING: This is currently alpha .**
 
 # Requirements
 Twisted
@@ -9,20 +28,21 @@ Twisted
 Function returning channel (http://talks.golang.org/2012/concurrency.slide#25).
 ```python
 def boring(message):
-    channel = csp.Channel()
-    def _do():
+    c = Channel()
+    def counter():
         i = 0
         while True:
-            yield channel.put("%s %d" % (message, i))
-            yield csp.wait(random.random())
+            yield put(c, "%s %d" % (message, i))
+            yield wait(random.random())
             i += 1
-    csp.go(_do())
-    return channel
+    go(counter())
+    return c
+
 
 def main():
     b = boring("boring!")
     for i in range(5):
-        print "You say: \"%s\"" % (yield b.take())
+        print "You say: \"%s\"" % (yield take(b))
     print "You are boring; I'm leaving."
 ```
 
@@ -31,30 +51,45 @@ Pingpong (http://talks.golang.org/2013/advconc.slide#6).
 class Ball:
     hits = 0
 
+
 def player(name, table):
     while True:
-        ball = yield table.take()
+        ball = yield take(table)
         ball.hits += 1
         print name, ball.hits
-        yield csp.wait(0.1)
-        yield table.put(ball)
+        yield wait(0.1)
+        yield put(table, ball)
+
 
 def main():
-    table = csp.Channel()
+    table = Channel()
 
-    yield csp.go(player("ping", table))
-    yield csp.go(player("pong", table))
+    go(player("ping", table))
+    go(player("pong", table))
 
-    yield table.put(Ball())
-    yield csp.wait(1)
+    yield put(table, Ball())
+    yield wait(1)
 ```
+
+Timeout using `alts` (`select` in Go) (http://talks.golang.org/2012/concurrency.slide#35).
+```python
+c = boring("Joe")
+while True:
+    value, chan = yield alts([c, timeout(0.8)])
+    if chan is c:
+        print value
+    else:
+        print "You're too slow."
+        yield stop()
+```
+
 # Running the examples
 Use the `run` script, like
 ```bash
-./run example.go.pingpong
+./run example.go.timeout_for_whole_conversation_using_select
 ```
 
-Examples under `example/go` are ported from Go examples:
+Examples under `example/go` are ports of Go examples from:
 - http://talks.golang.org/2012/concurrency.slide
 - http://talks.golang.org/2013/advconc.slide.
 
@@ -65,30 +100,33 @@ Python 2.7.5+ (default, Sep 19 2013, 13:48:49)
 [GCC 4.8.1] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import thread
+>>> from csp import *
 >>> from twisted.internet import reactor
 >>> thread.start_new_thread(reactor.run, (), {"installSignalHandlers": False})
-139751934256896
->>> from csp import *
+140038185355008
 >>> class Ball:
 ...     hits = 0
 ...
 >>> def player(name, table):
 ...     while True:
-...         ball = yield table.take()
+...         ball = yield take(table)
+...         if ball is None: # channel's closed
+...             print name, "Ball's gone"
+...             break
 ...         ball.hits += 1
 ...         print name, ball.hits
 ...         yield wait(0.1)
-...         yield table.put(ball)
+...         yield put(table, ball)
 ...
->>> @process
-... def main():
+>>> def main():
 ...     table = Channel()
-...     yield go(player("ping", table))
-...     yield go(player("pong", table))
-...     yield table.put(Ball())
+...     go(player("ping", table))
+...     go(player("pong", table))
+...     yield put(table, Ball())
 ...     yield wait(1)
+...     close(table)
 ...
->>> reactor.callFromThread(main)
+>>> reactor.callFromThread(lambda: go(main()))
 >>> ping 1
 pong 2
 ping 3
@@ -99,125 +137,29 @@ ping 7
 pong 8
 ping 9
 pong 10
-<csp.Process instance at 0x1274e18> stopped
-<csp.Process instance at 0x1274ef0> stopped
-<csp.Process instance at 0x1274c68> stopped
+ping Ball's gone
+pong Ball's gone
 
 >>>
 ```
 
-# Documentation
-
-## Channels
-Unbuffered: puts and takes are synchronized. A reader waits until a writer arrives, and vice-versa.
-```python
-csp.Channel()
-```
-Buffered: puts and takes can be asynchronous. A reader proceeds if the queue is not empty, a writer proceeds if the queue is not full.
-```python
-csp.Channel(size = 2)
-```
-
-Channel operations must happen inside "light-weight processes", which are simulation of execution threads, using generators following certain conventions.
-
-## yield channel.put(object)
-Put an object on the channel. If the channel is full, or unbuffered, wait until an object is taken off the channel, or when another process tries to take from the channel.
-
-## yield channel.take()
-Take an object off the channel. If the channel is empty, or unbuffered, wait until something is put on the channel.
-
-## yield csp.wait(seconds)
-Suspend the current process without blocking the real thread.
-```python
-def slow_pipe(in, out):
-    v = yield in.take()
-    yield csp.wait(0.5)
-    yield out.put(v)
-```
-
-## yield csp.select(*channels)
-Choose the first channel that is ready to be taken from, waiting until at least one is ready.
-```python
-def test(url):
-    def timeout_channel(seconds):
-        c = csp.Channel()
-        def _t():
-            yield csp.wait(seconds)
-            yield c.put(None)
-        csp.go(_t())
-        return c
-
-    g = google_channel(url)
-    d = duckduckgo_channel(url)
-    t = timeout_channel(5)
-    chan = yield csp.select(g, d, t)
-    if chan is g:
-        print "Google is fast"
-        print yield chan.take()
-    elif chan is d:
-        print "Duckduckgo is fast"
-        print yield chan.take()
-    else:
-        print "Search engines are slow"
-```
-
-## csp.go(gen)
-Spawn a lightweight process given a generator.
-```python
-def pipe(in, out):
-    v = yield in.take()
-    yield out.put(v)
-
-go(pipe(search, log))
-```
-
-## csp.process(f)
-Decorate a generator function so that calling it spawns a process.
-```python
-@process
-def pipe(in, out):
-    v = yield in.take()
-    yield out.put(v)
-
-pipe(search, log)
-```
-
-## csp.channelify(deferred)
-Convert a Twisted deferred into a channel. A tuple of `(value, failure)` will be put on the channel once the deferred finishes.
-```python
-from twisted.web.client import getPage
-def google(term):
-    c = csp.channelify(getPage("http://www.google.com/search?q=%s" % term))
-    result, error = yield c.take()
-    if error:
-        print "Uhm, not good:"
-        print error
-    else:
-        print "Google search results:"
-        print result
-```
+# Limitations
+- Does not work in a multi-threaded environment, at all (this is fixable though).
+- Channel's normal API cannot be used outside of a process (more precisely outside of the generator function of a process).
+- Generator functions must be used to spawn processes. This makes it less composable than in Go (where the constructs are built-in), or Clojurescript (where macros rule).
+- Forgetting to `yield` can cause subtle bugs.
+- Cooperative multi-processing (not sure if this is a big problem though).
 
 # TODO
-- Proper implementation of channel operations (each channel needs to keep track of pending readers/writers). The current implementation simply polls repeatedly. While it may appear to work, it is (at least) not efficient.
-- Closeable channels.
-- Support for selecting over all channel operations, instead of just taking.
-- More fine-grained control of processes.
-- More examples.
-
-# Limitations
-- No "deep" yield. Therefore it is impossible to extract pieces of
-  logic that does channel communication without spawning a new process
-  (maybe python 3 ("yield from") will help?). This can reduce composability.
-- There must be running event loop.
-- Channel's normal API cannot be used outside of a process (more
-  precisely outside of the generator function of a process). Another
-  set of API would be needed for that.
-- Cooperative scheduling (usually this is not a big problem).
-- Forgetting to yield causes bug (value not being put on channel,
-  infinite loop blocking thread (Go/Clojure do not have this problem
-  because single syntactic units are used there, as opposed to "yield"
-  plus something)).
-- Select API is clunky without first-class language support (built-in like Go, or through macro in Clojure).
+- Support multi-threaded environment (porting Clojure's `core.async` not Clojurescript's).
+- Write **tests**.
+- Think of a sensible error handling strategy (I think this should be decide by client code not library code though).
+  + Should there be a separate error channel?
+  + Should channels deliver `(result, error)` tuples?
+  + Should error be treated as special value (caught exception [re-thrown when taken](http://swannodette.github.io/2013/08/31/asynchronous-error-handling/))?
+- Support other reactors, e.g. [Tornado](http://www.tornadoweb.org/en/stable/) (should be easy, as the dispatcher is the only thing that depends on twisted).
+- More documentation.
+- More examples (focusing on leveraging Twisted's rich network capabilities).
 
 # Inspiration
 - http://swannodette.github.io/2013/08/24/es6-generators-and-csp

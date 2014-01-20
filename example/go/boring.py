@@ -1,24 +1,24 @@
 # http://talks.golang.org/2012/concurrency.slide#25
 # Generator: function that returns a channel
 
-import csp
+from csp import Channel, put, take, go, wait
 import random
 
 
 def boring(message):
-    channel = csp.Channel()
+    c = Channel()
     def _do():
         i = 0
         while True:
-            yield channel.put("%s %d" % (message, i))
-            yield csp.wait(random.random())
+            yield put(c, "%s %d" % (message, i))
+            yield wait(random.random())
             i += 1
-    csp.go(_do())
-    return channel
+    go(_do())
+    return c
 
 
 def main():
     b = boring("boring!")
     for i in range(5):
-        print "You say: \"%s\"" % (yield b.take())
+        print "You say: \"%s\"" % (yield take(b))
     print "You are boring; I'm leaving."

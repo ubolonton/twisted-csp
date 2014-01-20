@@ -10,7 +10,7 @@ import csp
 
 def run_twisted_then_call(main):
     def run_main():
-        channel = csp.go(main())
+        channel = csp.go(main(), True)
         value = yield csp.take(channel)
         print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         print "main returned", value

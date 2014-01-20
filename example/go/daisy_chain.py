@@ -9,7 +9,7 @@ def f(left, right):
 
 
 def main():
-    n = 1000
+    n = 100000
     leftmost = Channel()
     right = leftmost
     left = leftmost

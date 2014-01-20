@@ -8,10 +8,10 @@ def lazy_echo(x):
 
 
 def main():
-    chan = go(lazy_echo(1))
+    chan = go(lazy_echo(1), True)
     print (yield take(chan))
 
-    chan = go(lazy_echo(2))
+    chan = go(lazy_echo(2), True)
     yield wait(1)
     print (yield take(chan))
 

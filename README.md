@@ -1,10 +1,13 @@
 Communicating sequential processes for Twisted. Channels like Go, or Clojurescript's `core.async`.
 
+**WARNING: This is currently alpha  software.**
+
 This is a very close port of Clojurescript's `core.async`. The significant difference is that light-weight processes are implemented using generators (`yield`) instead of macros.
 
 - Channel operations must happen inside "light-weight processes" (code flows, not actual threads).
 - Light-weight processes are spawn by calling `go` on generators.
 - Most channel operations must follow the form of `yield do_sth(...)`.
+
 ```python
 def slow_pipe(input, output):
     while True:
@@ -18,11 +21,6 @@ def slow_pipe(input, output):
 
 go(slow_pipe(chan1, chan2))
 ```
-
-**WARNING: This is currently alpha .**
-
-# Requirements
-Twisted
 
 # Examples
 Function returning channel (http://talks.golang.org/2012/concurrency.slide#25).

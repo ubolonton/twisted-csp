@@ -1,3 +1,4 @@
+# Twisted CSP
 Communicating sequential processes for Twisted. Channels like Go, or Clojurescript's `core.async`.
 
 **WARNING: This is currently alpha  software.**
@@ -22,7 +23,8 @@ def slow_pipe(input, output):
 go(slow_pipe(chan1, chan2))
 ```
 
-# Examples
+## Examples ##
+
 Function returning channel (http://talks.golang.org/2012/concurrency.slide#25).
 ```python
 def boring(message):
@@ -81,7 +83,8 @@ while True:
         yield stop()
 ```
 
-# Running the examples
+## Running the examples ##
+
 Use the `run` script, like
 ```bash
 ./run example.go.timeout_for_whole_conversation_using_select
@@ -92,7 +95,8 @@ Examples under `example/go` are ports of Go examples from:
 - http://talks.golang.org/2013/advconc.slide.
 
 
-# Playing around in a REPL
+## Playing around in a REPL ##
+
 ```python
 Python 2.7.5+ (default, Sep 19 2013, 13:48:49)
 [GCC 4.8.1] on linux2
@@ -141,14 +145,16 @@ pong Ball's gone
 >>>
 ```
 
-# Limitations
+## Limitations ##
+
 - Does not work in a multi-threaded environment, at all (this is fixable though).
 - Channel's normal API cannot be used outside of a process (more precisely outside of the generator function of a process).
 - Generator functions must be used to spawn processes. This makes it less composable than in Go (where the constructs are built-in), or Clojurescript (where macros rule).
 - Forgetting to `yield` can cause subtle bugs.
 - Cooperative multi-processing (not sure if this is a big problem though).
 
-# TODO
+## TODO ##
+
 - Multiplexing, mixing, publishing/subscribing.
 - Channel operations (map, filter, reduce...).
 - Support multi-threaded environment (porting Clojure's `core.async` not Clojurescript's).
@@ -161,7 +167,8 @@ pong Ball's gone
 - More documentation.
 - More examples (focusing on leveraging Twisted's rich network capabilities).
 
-# Inspiration
+## Inspiration ##
+
 - http://swannodette.github.io/2013/08/24/es6-generators-and-csp
 - https://github.com/clojure/core.async
 - https://github.com/olahol/node-csp

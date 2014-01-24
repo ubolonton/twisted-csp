@@ -100,44 +100,44 @@ class ManyToManyChannel:
         if self.buf is not None and len(self.buf) > 0:
             handler.commit()
             return Box(self.buf.remove())
-        else:
-            while True:
-                try:
-                    putter = self.puts.pop()
-                except IndexError:
-                    putter = None
-                # There's a pending put...
-                if putter is not None:
-                    put_handler = putter.handler
-                    # ... that is still interested
-                    if put_handler.is_active():
-                        # Done, shake hand, take it
-                        callback, _ = put_handler.commit(), handler.commit()
-                        dispatch.run(callback)
-                        return Box(putter.value)
-                    else:
-                        continue
-                # No pending puts
+
+        while True:
+            try:
+                putter = self.puts.pop()
+            except IndexError:
+                putter = None
+            # There's a pending put...
+            if putter is not None:
+                put_handler = putter.handler
+                # ... that is still interested
+                if put_handler.is_active():
+                    # Done, shake hand, take it
+                    callback, _ = put_handler.commit(), handler.commit()
+                    dispatch.run(callback)
+                    return Box(putter.value)
                 else:
-                    if self.closed:
-                        handler.commit()
-                        return Box(None)
+                    continue
+            # No pending puts
+            else:
+                if self.closed:
+                    handler.commit()
+                    return Box(None)
+                else:
+                    # Periodically remove stale takes
+                    if self.dirty_takes > MAX_DIRTY:
+                        self.takes.cleanup(keep = lambda handler: handler.is_active())
+                        self.dirty_takes = 0
                     else:
-                        # Periodically remove stale takes
-                        if self.dirty_takes > MAX_DIRTY:
-                            self.takes.cleanup(keep = lambda handler: handler.is_active())
-                            self.dirty_takes = 0
-                        else:
-                            self.dirty_takes += 1
+                        self.dirty_takes += 1
 
-                        # TODO: Do a last-chance "garbage collection" to
-                        # be sure?
-                        if len(self.takes) >= MAX_QUEUE_SIZE:
-                            raise Exception("No more than %d pending takes are allowed on a single channel." % MAX_QUEUE_SIZE)
+                    # TODO: Do a last-chance "garbage collection" to
+                    # be sure?
+                    if len(self.takes) >= MAX_QUEUE_SIZE:
+                        raise Exception("No more than %d pending takes are allowed on a single channel." % MAX_QUEUE_SIZE)
 
-                        # Queue this take
-                        self.takes.unbounded_unshift(handler)
-                break
+                    # Queue this take
+                    self.takes.unbounded_unshift(handler)
+            break
 
     def close(self):
         if self.closed:
@@ -153,11 +153,7 @@ class ManyToManyChannel:
             try:
                 taker = self.takes.pop()
             except IndexError:
-                # TODO: Why not just continue?
-                taker = None
-            if taker is not None:
-                if taker.is_active():
-                    callback = taker.commit()
-                    dispatch.run(lambda: callback(None))
-            else:
                 break
+            if taker.is_active():
+                callback = taker.commit()
+                dispatch.run(lambda: callback(None))

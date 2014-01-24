@@ -104,8 +104,7 @@ class ManyToManyChannel:
                     put_handler = putter.handler
                     if put_handler.is_active():
                         callback, _ = put_handler.commit(), handler.commit()
-                        # XXX Why don't we just pass no param???
-                        dispatch.run(lambda: callback())
+                        dispatch.run(callback)
                         return Box(putter.value)
                     else:
                         continue

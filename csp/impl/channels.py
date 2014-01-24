@@ -6,7 +6,12 @@ from csp.impl.interfaces import IChannel
 from csp.impl.buffers import RingBuffer, FixedBuffer
 
 
+# The number of pending puts/takes between "garbage collections"
+# (removing stale (no longer interested, inactive) handlers (e.g.
+# unchosen alt operations))
 MAX_DIRTY = 64
+
+# Maximum pending puts/takes allowed on a single channel
 MAX_QUEUE_SIZE = 1024
 
 PutBox = namedtuple("PutBox", ["handler", "value"])
@@ -32,11 +37,12 @@ class ManyToManyChannel:
         else:
             self.buf = buf_or_n
 
+        self.closed = False
         self.takes = RingBuffer(32)
         self.puts = RingBuffer(32)
+        # Counters towards next "garbage collections"
         self.dirty_takes = 0
         self.dirty_puts = 0
-        self.closed = False
 
     def put(self, value, handler):
         if value is None:
@@ -50,40 +56,39 @@ class ManyToManyChannel:
                 taker = self.takes.pop()
             except IndexError:
                 taker = None
-            # There's a putter in line
+            # There's a pending take...
             if taker is not None:
-                # And he's still interested
+                # ... that is still interested
                 if taker.is_active():
-                    # Confirm with both sides and give it to him
+                    # Done, shake hand, here it is
                     callback, _ = taker.commit(), handler.commit()
                     # FIX
                     dispatch.run(lambda: callback(value))
                     return Box(None)
                 else:
                     continue
-
-            # No taker
+            # No pending takes
             else:
-                # Confirm with putter, and put it on wait
+                # Throw the value on the queue and be done with it
                 if self.buf is not None and not self.buf.is_full():
                     handler.commit()
                     self.buf.add(value)
                     return Box(None)
                 # No more room for waiting
                 else:
-                    # But maybe some putters are no longer interested.
-                    # Remove them...
+                    # Periodically remove stale puts
                     if self.dirty_puts > MAX_DIRTY:
-                        # Sort of garbage collection
                         self.puts.cleanup(keep = lambda putter: putter.handler.is_active())
                         self.dirty_puts = 0
                     else:
                         self.dirty_puts += 1
 
+                    # TODO: Do a last-chance "garbage collection" to
+                    # be sure?
                     if len(self.puts) >= MAX_QUEUE_SIZE:
                         raise Exception("No more than %d pending puts are allowed on a single channel." % MAX_QUEUE_SIZE)
 
-                    # Get the putter in line
+                    # Queue this put
                     self.puts.unbounded_unshift(PutBox(handler, value))
             break
 
@@ -91,6 +96,7 @@ class ManyToManyChannel:
         if not handler.is_active():
             return
 
+        # Waiting values go first
         if self.buf is not None and len(self.buf) > 0:
             handler.commit()
             return Box(self.buf.remove())
@@ -100,28 +106,36 @@ class ManyToManyChannel:
                     putter = self.puts.pop()
                 except IndexError:
                     putter = None
+                # There's a pending put...
                 if putter is not None:
                     put_handler = putter.handler
+                    # ... that is still interested
                     if put_handler.is_active():
+                        # Done, shake hand, take it
                         callback, _ = put_handler.commit(), handler.commit()
                         dispatch.run(callback)
                         return Box(putter.value)
                     else:
                         continue
+                # No pending puts
                 else:
                     if self.closed:
                         handler.commit()
                         return Box(None)
                     else:
+                        # Periodically remove stale takes
                         if self.dirty_takes > MAX_DIRTY:
                             self.takes.cleanup(keep = lambda handler: handler.is_active())
                             self.dirty_takes = 0
                         else:
                             self.dirty_takes += 1
 
+                        # TODO: Do a last-chance "garbage collection" to
+                        # be sure?
                         if len(self.takes) >= MAX_QUEUE_SIZE:
                             raise Exception("No more than %d pending takes are allowed on a single channel." % MAX_QUEUE_SIZE)
 
+                        # Queue this take
                         self.takes.unbounded_unshift(handler)
                 break
 

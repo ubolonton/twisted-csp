@@ -27,11 +27,11 @@ class FnHandler:
 
 def put_then_callback(channel, value, callback):
     """Puts a value on the channel, calling the supplied callback when
-    done.
+    done, passing False if the channel was closed, True otherwise.
     """
     result = channel.put(value, FnHandler(callback))
     if result:
-        callback()
+        callback(result.value)
 
 
 def take_then_callback(channel, callback):
@@ -95,7 +95,7 @@ class Process:
 
         if instruction.op == "put":
             channel, value = instruction.data
-            put_then_callback(channel, value, lambda: self._continue(None))
+            put_then_callback(channel, value, self._continue)
             return
 
         # TODO: Should we throw if the value is an exception?
@@ -124,7 +124,7 @@ def put(channel, value):
 
     Must be used with "yield" inside a go function.
 
-    yield put(channel, "value")
+    not_closed = yield put(channel, "value")
     """
     return Instruction("put", (channel, value))
 

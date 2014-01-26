@@ -49,7 +49,7 @@ class ManyToManyChannel:
             raise Exception("Cannot put None on a channel.")
 
         if self.closed or not handler.is_active():
-            return Box(None)
+            return Box(not self.closed)
 
         while True:
             try:
@@ -64,7 +64,7 @@ class ManyToManyChannel:
                     callback, _ = taker.commit(), handler.commit()
                     # FIX
                     dispatch.run(lambda: callback(value))
-                    return Box(None)
+                    return Box(True)
                 else:
                     continue
             # No pending takes
@@ -73,7 +73,7 @@ class ManyToManyChannel:
                 if self.buf is not None and not self.buf.is_full():
                     handler.commit()
                     self.buf.add(value)
-                    return Box(None)
+                    return Box(True)
                 # No more room for waiting
                 else:
                     # Periodically remove stale puts
@@ -113,7 +113,7 @@ class ManyToManyChannel:
                 if put_handler.is_active():
                     # Done, shake hand, take it
                     callback, _ = put_handler.commit(), handler.commit()
-                    dispatch.run(callback)
+                    dispatch.run(lambda: callback(True))
                     return Box(putter.value)
                 else:
                     continue

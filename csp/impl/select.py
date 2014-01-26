@@ -40,7 +40,7 @@ def do_alts(operations, callback):
         if isinstance(operation, (list, tuple)):
             port, value = operation
             result = port.put(value, (
-                lambda port: AltHandler(flag, lambda: callback(AltResult(None, port)))
+                lambda port: AltHandler(flag, lambda ok: callback(AltResult(ok, port)))
             )(port))
         else:
             port = operation

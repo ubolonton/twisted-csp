@@ -6,7 +6,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name="twisted-csp",
-      version="0.1.4",
+      version="0.1.5",
       description="Go-style channels for Twisted",
       author="Nguyễn Tuấn Anh",
       author_email="ubolonton@gmail.com",
@@ -14,7 +14,7 @@ setup(name="twisted-csp",
       long_description=open('README.md').read(),
       license="EPL",
 
-      packages=find_packages("."),
+      packages=["csp"] + find_packages("csp"),
 
       install_requires=[
           "twisted"

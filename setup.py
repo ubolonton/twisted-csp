@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup
 import os
 
@@ -12,7 +13,7 @@ setup(name="twisted-csp",
       url="https://github.com/ubolonton/twisted-csp",
       long_description=open('README.md').read(),
 
-      install_requires = [
+      install_requires=[
           "twisted"
       ]
 )

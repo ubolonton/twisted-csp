@@ -17,6 +17,7 @@ setup(name="twisted-csp",
       packages=["csp", "csp.impl"],
 
       install_requires=[
-          "twisted"
+          "twisted",
+          "zope.interface"
       ]
 )

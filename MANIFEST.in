@@ -1,0 +1,3 @@
+include README.md
+recursive-include csp *.py
+recursive-include example *.py

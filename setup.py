@@ -12,6 +12,7 @@ setup(name="twisted-csp",
       author_email="ubolonton@gmail.com",
       url="https://github.com/ubolonton/twisted-csp",
       long_description=open('README.md').read(),
+      license="EPL",
 
       install_requires=[
           "twisted"

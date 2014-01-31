@@ -6,7 +6,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name="twisted-csp",
-      version="0.1.0",
+      version="0.1.1",
       description="Go-style channels for Twisted",
       author="Nguyễn Tuấn Anh",
       author_email="ubolonton@gmail.com",

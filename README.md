@@ -159,14 +159,13 @@ pong Ball's gone
 - Channel operations (map, filter, reduce...).
 - Support multi-threaded environment (porting Clojure's `core.async` not Clojurescript's).
 - Write **tests**.
-- Think of a sensible error handling strategy (I think this should be decide by client code not library code though).
+- Think of a sensible error handling strategy (I think this should be decided by client code not library code though).
   + Should there be a separate error channel?
   + Should channels deliver `(result, error)` tuples?
-  + Should error be treated as special value (caught exception [re-thrown when taken](http://swannodette.github.io/2013/08/31/asynchronous-error-handling/))?
+  + Should errors be treated as special values (caught exceptions [re-thrown when taken](http://swannodette.github.io/2013/08/31/asynchronous-error-handling/))?
 - Support other reactors, e.g. [Tornado](http://www.tornadoweb.org/en/stable/) (should be easy, as the dispatcher is the only thing that depends on twisted).
 - More documentation.
 - More examples (focusing on leveraging Twisted's rich network capabilities).
-- Upload to PyPi.
 
 ## Inspiration ##
 

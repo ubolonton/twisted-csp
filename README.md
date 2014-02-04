@@ -166,6 +166,7 @@ pong Ball's gone
 - Support other reactors, e.g. [Tornado](http://www.tornadoweb.org/en/stable/) (should be easy, as the dispatcher is the only thing that depends on twisted).
 - More documentation.
 - More examples (focusing on leveraging Twisted's rich network capabilities).
+- `put_then_callback`, `take_then_callback` execute the supplied callback in the same tick if result is immediately available. This can cause problems (especially if they are public API).
 
 ## Inspiration ##
 

@@ -15,6 +15,9 @@ class IChannel(Interface):
     def close(self):
         pass
 
+    def is_closed(self):
+        pass
+
 
 class IHandler(Interface):
 

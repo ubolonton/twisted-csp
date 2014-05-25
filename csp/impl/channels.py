@@ -44,6 +44,9 @@ class ManyToManyChannel:
         self.dirty_takes = 0
         self.dirty_puts = 0
 
+    def is_closed(self):
+        return self.closed
+
     def put(self, value, handler):
         if value is None:
             raise Exception("Cannot put None on a channel.")

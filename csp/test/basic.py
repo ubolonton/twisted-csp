@@ -55,7 +55,7 @@ class Putting(TestCase):
         def taken(value):
             def checking():
                 yield None
-                self.assertEqual(var["count"], 2)
+                self.assertEqual(var["count"], 2, "second (buffered) put succeeds")
                 d.callback(None)
             go(checking())
         take_then_callback(ch, taken)
@@ -67,7 +67,7 @@ class Goroutine(TestCase):
     def test_yielding_normal_value(self):
         values = [42, [42], (42,), {"x": 42}, None, True, False, lambda: None]
         for value in values:
-            self.assertEqual((yield value), value)
+            self.assertEqual((yield value), value, "yielded value is bounced back untouched")
 
     @async
     def test_returning_value(self):

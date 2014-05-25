@@ -1,4 +1,5 @@
 from twisted.trial.unittest import TestCase
+from twisted.internet.defer import Deferred
 
 from csp.test_helpers import async
 from csp import Channel, put, take, go, sleep
@@ -42,6 +43,23 @@ class Putting(TestCase):
             ch.close()
         go(closing())
         self.assertEqual((yield put(ch, 42)), False)
+
+    def test_parked_buffered(self):
+        d = Deferred()
+        ch = Channel(1)
+        var = {"count": 0}
+        def inc(ok):
+            var["count"] += 1
+        put_then_callback(ch, 42, inc)
+        put_then_callback(ch, 42, inc)
+        def taken(value):
+            def checking():
+                yield None
+                self.assertEqual(var["count"], 2)
+                d.callback(None)
+            go(checking())
+        take_then_callback(ch, taken)
+        return d
 
 
 class Goroutine(TestCase):

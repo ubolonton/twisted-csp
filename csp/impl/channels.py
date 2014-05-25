@@ -99,7 +99,24 @@ class ManyToManyChannel:
         # Waiting values go first
         if self.buf is not None and len(self.buf) > 0:
             handler.commit()
-            return Box(self.buf.remove())
+            # We need to check pending puts here, otherwise they won't
+            # be able to proceed until their number reaches MAX_DIRTY
+            value = self.buf.remove()
+            while True:
+                try:
+                    putter = self.puts.pop()
+                except IndexError:
+                    break
+                else:
+                    put_handler = putter.handler
+                    if put_handler.is_active():
+                        callback = put_handler.commit()
+                        dispatch.run(lambda: callback(True))
+                        self.buf.add(putter.value)
+                        break
+                    else:
+                        continue
+            return Box(value)
 
         while True:
             try:

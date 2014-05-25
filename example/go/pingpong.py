@@ -1,6 +1,6 @@
 # http://talks.golang.org/2013/advconc.slide#6
 
-from csp import Channel, put, take, go, sleep
+from csp import Channel, put, take, spawn, sleep
 
 
 class Ball:
@@ -19,8 +19,8 @@ def player(name, table):
 def main():
     table = Channel()
 
-    go(player("ping", table))
-    go(player("pong", table))
+    spawn(player("ping", table))
+    spawn(player("pong", table))
 
     yield put(table, Ball())
     yield sleep(1)

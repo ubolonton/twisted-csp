@@ -12,18 +12,17 @@ def no_op(*arg):
     pass
 
 
-def go(gen, chan=False):
-    """Asynchronously executes a "go" function (a generator returned by a
-    function following certain conventions, to be exact).
+def spawn(gen, chan=False):
+    """Asynchronously executes a "goroutine", which must be a generator.
 
-    Returns a channel that will receive the result of the go function
-    when it completes.
+    If "chan" is True, returns a channel that will receive the result
+    of the goroutine when it completes.
     """
     # Only deliver the result to a channel if requested. Ideally I
     # think the choice should be a call-site optimization (whether the
-    # return value of "go" is used). However that probably requires
-    # the construct to be built-in (I believe Clojure's core.async
-    # suffers from the same problem).
+    # returned channel is used). However that probably requires the
+    # construct to be built-in (I believe Clojure's core.async suffers
+    # from the same problem).
     if chan:
         channel = Channel(1)
         def done(value):
@@ -38,6 +37,16 @@ def go(gen, chan=False):
         process = csp.impl.process.Process(gen)
         process.run()
         return
+
+
+def go(f, args=(), kwargs={}, chan=False):
+    """Creates and executes a "goroutine". The supplied function must be a
+    generator function.
+
+    If "chan" is True, returns a channel that will receive the result
+    of the goroutine when it completes.
+    """
+    return spawn(f(*args, **kwargs), chan=chan)
 
 
 # For API consistency (sort of)

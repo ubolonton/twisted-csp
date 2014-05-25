@@ -1,4 +1,4 @@
-from csp import Channel, put, take, go, alts, sleep
+from csp import Channel, put, take, spawn, go, alts, sleep
 
 
 def produce(chan, value):
@@ -10,7 +10,7 @@ def main():
     chans = []
     for i in range(20):
         chan = Channel()
-        go(produce(chan, i))
+        spawn(produce(chan, i))
         chans.append(chan)
 
     def timeout(seconds):
@@ -18,7 +18,7 @@ def main():
         def t():
             yield sleep(seconds)
             chan.close()
-        go(t())
+        go(t)
         return chan
 
     chans.append(timeout(0.3))

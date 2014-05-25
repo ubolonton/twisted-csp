@@ -20,7 +20,7 @@ def slow_pipe(input, output):
         else:
             yield put(output, value)
 
-go(slow_pipe(chan1, chan2))
+go(slow_pipe, [chan1, chan2]))
 ```
 
 ## Examples ##
@@ -35,7 +35,7 @@ def boring(message):
             yield put(c, "%s %d" % (message, i))
             yield sleep(random.random())
             i += 1
-    go(counter())
+    go(counter)
     return c
 
 
@@ -64,8 +64,8 @@ def player(name, table):
 def main():
     table = Channel()
 
-    go(player("ping", table))
-    go(player("pong", table))
+    go(player, ["ping", table])
+    go(player, ["pong", table])
 
     yield put(table, Ball())
     yield sleep(1)
@@ -122,13 +122,13 @@ Type "help", "copyright", "credits" or "license" for more information.
 ...
 >>> def main():
 ...     table = Channel()
-...     go(player("ping", table))
-...     go(player("pong", table))
+...     go(player, ["ping", table])
+...     go(player, ["pong", table])
 ...     yield put(table, Ball())
 ...     yield sleep(1)
 ...     close(table)
 ...
->>> reactor.callFromThread(lambda: go(main()))
+>>> reactor.callFromThread(lambda: go(main))
 >>> ping 1
 pong 2
 ping 3

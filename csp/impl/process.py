@@ -183,8 +183,8 @@ def stop(value=None):
         yield stop("late")
 
     # Will have "early" put on it
-    chan1 = go(proc(True))
+    chan1 = spawn(proc(True))
     # Will have "late" put on it
-    chan2 = go(proc(False))
+    chan2 = spawn(proc(False))
     """
     return Instruction("stop", value)

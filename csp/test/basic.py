@@ -12,7 +12,7 @@ class Putting(TestCase):
         ch = Channel()
         def taking():
             yield take(ch)
-        go(taking())
+        go(taking)
         self.assertEqual((yield put(ch, 42)), True)
 
     @async
@@ -32,7 +32,7 @@ class Putting(TestCase):
         def taking():
             yield sleep(0.005)
             yield take(ch)
-        go(taking())
+        go(taking)
         self.assertEqual((yield put(ch, 42)), True)
 
     @async
@@ -41,7 +41,7 @@ class Putting(TestCase):
         def closing():
             yield sleep(0.005)
             ch.close()
-        go(closing())
+        go(closing)
         self.assertEqual((yield put(ch, 42)), False)
 
     def test_parked_buffered(self):
@@ -57,7 +57,7 @@ class Putting(TestCase):
                 yield None
                 self.assertEqual(var["count"], 2, "second (buffered) put succeeds")
                 d.callback(None)
-            go(checking())
+            go(checking)
         take_then_callback(ch, taken)
         return d
 
@@ -73,6 +73,6 @@ class Goroutine(TestCase):
     def test_returning_value(self):
         def ident(x):
             yield stop(x)
-        ch = go(ident(42), chan=True)
+        ch = go(ident, args=[42], chan=True)
         self.assertEqual((yield take(ch)), 42, "returned value is delivered")
         self.assertEqual(ch.is_closed(), True, "output channel is closed")

@@ -11,7 +11,7 @@ def fan_in(input1, input2):
         while True:
             value, _ = yield alts([input1, input2])
             yield put(c, value)
-    go(collect())
+    go(collect)
     return c
 
 

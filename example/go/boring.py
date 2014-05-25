@@ -13,7 +13,7 @@ def boring(message):
             yield put(c, "%s %d" % (message, i))
             yield sleep(random.random())
             i += 1
-    go(_do())
+    go(_do)
     return c
 
 

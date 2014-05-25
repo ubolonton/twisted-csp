@@ -4,6 +4,7 @@ from csp.test_helpers import async
 from csp import Channel, put, take, go, sleep
 from csp import put_then_callback, take_then_callback
 
+
 class Putting(TestCase):
     @async
     def test_immediate_taken(self):
@@ -41,3 +42,11 @@ class Putting(TestCase):
             ch.close()
         go(closing())
         self.assertEqual((yield put(ch, 42)), False)
+
+
+class Goroutine(TestCase):
+    @async
+    def test_yielding_normal_value(self):
+        values = [42, [42], (42,), {"x": 42}, None, True, False, lambda: None]
+        for value in values:
+            self.assertEqual((yield value), value)

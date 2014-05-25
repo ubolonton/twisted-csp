@@ -86,37 +86,38 @@ class Process:
             self._done(None)
             raise
 
-        assert isinstance(instruction, Instruction)
+        if isinstance(instruction, Instruction):
+            # Early termination
+            if instruction.op == "stop":
+                self._done(instruction.data)
+                return
 
-        # Early termination
-        if instruction.op == "stop":
-            self._done(instruction.data)
-            return
+            if instruction.op == "put":
+                channel, value = instruction.data
+                put_then_callback(channel, value, self._continue)
+                return
 
-        if instruction.op == "put":
-            channel, value = instruction.data
-            put_then_callback(channel, value, self._continue)
-            return
+            # TODO: Should we throw if the value is an exception?
+            if instruction.op == "take":
+                channel = instruction.data
+                take_then_callback(channel, self._continue)
+                return
 
-        # TODO: Should we throw if the value is an exception?
-        if instruction.op == "take":
-            channel = instruction.data
-            take_then_callback(channel, self._continue)
-            return
+            # TODO: Timeout channel instead?
+            if instruction.op == "sleep":
+                seconds = instruction.data
+                callback = lambda: self._continue(None)
+                dispatch.queue_delay(callback, seconds)
+                return
 
-        # TODO: Timeout channel instead?
-        if instruction.op == "sleep":
-            seconds = instruction.data
-            callback = lambda: self._continue(None)
-            dispatch.queue_delay(callback, seconds)
-            return
-
-        if instruction.op == "alts":
-            operations = instruction.data
-            result = do_alts(operations, self._continue)
-            if result:
-                self._continue(result.value)
-            return
+            if instruction.op == "alts":
+                operations = instruction.data
+                result = do_alts(operations, self._continue)
+                if result:
+                    self._continue(result.value)
+                return
+        else:
+            self._continue(instruction)
 
 
 def put(channel, value):

@@ -32,3 +32,12 @@ class Putting(TestCase):
             yield take(ch)
         go(taking())
         self.assertEqual((yield put(ch, 42)), True)
+
+    @async
+    def test_parked_closed(self):
+        ch = Channel()
+        def closing():
+            yield sleep(0.005)
+            ch.close()
+        go(closing())
+        self.assertEqual((yield put(ch, 42)), False)

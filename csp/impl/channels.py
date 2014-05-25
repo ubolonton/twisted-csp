@@ -143,12 +143,9 @@ class ManyToManyChannel:
         if self.closed:
             return
 
-        # The current semantics is that a "close" is forceful, which
-        # means any pending puts or buffered values will be ignored.
-        # Is that actually a good thing? Ignoring buffered values
-        # sounds ok, but no response to pending puts?
-
         self.closed = True
+
+        # Pending takes get "channel closed"
         while True:
             try:
                 taker = self.takes.pop()
@@ -157,3 +154,14 @@ class ManyToManyChannel:
             if taker.is_active():
                 callback = taker.commit()
                 dispatch.run(lambda: callback(None))
+
+        # Pending puts get "channel closed"
+        while True:
+            try:
+                putter = self.puts.pop()
+            except IndexError:
+                break
+            handler = putter.handler
+            if handler.is_active():
+                callback = handler.commit()
+                dispatch.run(lambda: callback(False))

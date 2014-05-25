@@ -1,8 +1,8 @@
-from csp import Channel, put, take, go, alts, wait
+from csp import Channel, put, take, go, alts, sleep
 
 
 def produce(chan, value):
-    yield wait(0.1)
+    yield sleep(0.1)
     yield put(chan, value)
 
 
@@ -16,7 +16,7 @@ def main():
     def timeout(seconds):
         chan = Channel()
         def t():
-            yield wait(seconds)
+            yield sleep(seconds)
             chan.close()
         go(t())
         return chan

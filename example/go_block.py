@@ -1,8 +1,8 @@
-from csp import go, wait, take, stop
+from csp import go, sleep, take, stop
 
 
 def lazy_echo(x):
-    yield wait(0.1)
+    yield sleep(0.1)
     print "I'm done"
     yield stop(x)
 
@@ -12,7 +12,7 @@ def main():
     print (yield take(chan))
 
     chan = go(lazy_echo(2), True)
-    yield wait(1)
+    yield sleep(1)
     print (yield take(chan))
 
     yield stop("Done")

@@ -1,7 +1,7 @@
 # http://talks.golang.org/2012/concurrency.slide#25
 # Generator: function that returns a channel
 
-from csp import Channel, put, take, go, wait
+from csp import Channel, put, take, go, sleep
 import random
 
 
@@ -11,7 +11,7 @@ def boring(message):
         i = 0
         while True:
             yield put(c, "%s %d" % (message, i))
-            yield wait(random.random())
+            yield sleep(random.random())
             i += 1
     go(_do())
     return c

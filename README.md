@@ -13,7 +13,7 @@ This is a very close port of Clojurescript's `core.async`. The significant diffe
 def slow_pipe(input, output):
     while True:
         value = yield take(input)
-        yield wait(0.5)
+        yield sleep(0.5)
         if value is None: # input closed
             close(output)
             yield stop()
@@ -33,7 +33,7 @@ def boring(message):
         i = 0
         while True:
             yield put(c, "%s %d" % (message, i))
-            yield wait(random.random())
+            yield sleep(random.random())
             i += 1
     go(counter())
     return c
@@ -57,7 +57,7 @@ def player(name, table):
         ball = yield take(table)
         ball.hits += 1
         print name, ball.hits
-        yield wait(0.1)
+        yield sleep(0.1)
         yield put(table, ball)
 
 
@@ -68,7 +68,7 @@ def main():
     go(player("pong", table))
 
     yield put(table, Ball())
-    yield wait(1)
+    yield sleep(1)
 ```
 
 Timeout using `alts` (`select` in Go) (http://talks.golang.org/2012/concurrency.slide#35).
@@ -117,7 +117,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ...             break
 ...         ball.hits += 1
 ...         print name, ball.hits
-...         yield wait(0.1)
+...         yield sleep(0.1)
 ...         yield put(table, ball)
 ...
 >>> def main():
@@ -125,7 +125,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ...     go(player("ping", table))
 ...     go(player("pong", table))
 ...     yield put(table, Ball())
-...     yield wait(1)
+...     yield sleep(1)
 ...     close(table)
 ...
 >>> reactor.callFromThread(lambda: go(main()))

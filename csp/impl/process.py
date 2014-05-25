@@ -105,7 +105,7 @@ class Process:
             return
 
         # TODO: Timeout channel instead?
-        if instruction.op == "wait":
+        if instruction.op == "sleep":
             seconds = instruction.data
             callback = lambda: self._continue(None)
             dispatch.queue_delay(callback, seconds)
@@ -139,15 +139,15 @@ def take(channel):
     return Instruction("take", channel)
 
 
-def wait(seconds):
+def sleep(seconds):
     """Pauses the current go function.
 
     Must be used with "yield" inside a go function.
 
     # "Sleeps" for 0.5 seconds (but does not tie up the thread)
-    yield wait(0.5)
+    yield sleep(0.5)
     """
-    return Instruction("wait", seconds)
+    return Instruction("sleep", seconds)
 
 
 # TODO: Re-organize code
@@ -175,7 +175,7 @@ def stop(value=None):
     It's dual to the "return" keyword in normal functions.
 
     def proc(early):
-        yield wait(0.5)
+        yield sleep(0.5)
         if early:
             yield stop("early")
 

@@ -2,7 +2,7 @@
 from csp.impl.buffers import FixedBuffer, DroppingBuffer, SlidingBuffer
 from csp.impl.channels import ManyToManyChannel as Channel
 from csp.impl.process import put_then_callback, take_then_callback
-from csp.impl.process import put, take, wait, alts, stop
+from csp.impl.process import put, take, sleep, alts, stop
 from csp.impl.timers import timeout
 
 import csp.impl.process

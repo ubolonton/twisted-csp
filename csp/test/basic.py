@@ -1,7 +1,8 @@
 from twisted.trial.unittest import TestCase
 
 from csp.test_helpers import async
-from csp import Channel, put, take, go, wait
+from csp import Channel, put, take, go, sleep
+from csp import put_then_callback, take_then_callback
 
 class Putting(TestCase):
     @async
@@ -27,7 +28,7 @@ class Putting(TestCase):
     def test_parked_taken(self):
         ch = Channel()
         def taking():
-            yield wait(0.005)
+            yield sleep(0.005)
             yield take(ch)
         go(taking())
         self.assertEqual((yield put(ch, 42)), True)

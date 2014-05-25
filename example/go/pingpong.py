@@ -1,6 +1,6 @@
 # http://talks.golang.org/2013/advconc.slide#6
 
-from csp import Channel, put, take, go, wait
+from csp import Channel, put, take, go, sleep
 
 
 class Ball:
@@ -12,7 +12,7 @@ def player(name, table):
         ball = yield take(table)
         ball.hits += 1
         print name, ball.hits
-        yield wait(0.1)
+        yield sleep(0.1)
         yield put(table, ball)
 
 
@@ -23,4 +23,4 @@ def main():
     go(player("pong", table))
 
     yield put(table, Ball())
-    yield wait(1)
+    yield sleep(1)

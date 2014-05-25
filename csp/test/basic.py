@@ -2,7 +2,7 @@ from twisted.trial.unittest import TestCase
 from twisted.internet.defer import Deferred
 
 from csp.test_helpers import async
-from csp import Channel, put, take, go, sleep
+from csp import Channel, put, take, go, sleep, stop
 from csp import put_then_callback, take_then_callback
 
 
@@ -68,3 +68,11 @@ class Goroutine(TestCase):
         values = [42, [42], (42,), {"x": 42}, None, True, False, lambda: None]
         for value in values:
             self.assertEqual((yield value), value)
+
+    @async
+    def test_returning_value(self):
+        def ident(x):
+            yield stop(x)
+        ch = go(ident(42), chan=True)
+        self.assertEqual((yield take(ch)), 42, "returned value is delivered")
+        self.assertEqual(ch.is_closed(), True, "output channel is closed")

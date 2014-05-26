@@ -6,6 +6,12 @@ from csp import Channel, put, take, alts, go, sleep, stop
 from csp import put_then_callback, take_then_callback
 
 
+def identity_channel(x):
+    ch = Channel(1)
+    put_then_callback(ch, x, lambda ok: ch.close())
+    return ch
+
+
 class Putting(TestCase):
     @async
     def test_immediate_taken(self):
@@ -100,6 +106,15 @@ class Taking(TestCase):
             ch.close()
         go(closing)
         self.assertEqual((yield take(ch)), None)
+
+
+class Selecting(TestCase):
+    @async
+    def test_identity(self):
+        ch = identity_channel(42)
+        r = yield alts([ch])
+        self.assertEqual(r.value, 42)
+        self.assertEqual(r.channel, ch)
 
 
 class Goroutine(TestCase):

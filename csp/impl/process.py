@@ -8,6 +8,8 @@ from csp.impl.select import do_alts
 
 Instruction = namedtuple("Instruction", ["op", "data"])
 
+AltData = namedtuple("AltData", ["operations", "priority", "default"])
+
 
 # FIX: This is not efficient, right? Python has no "reify"
 class FnHandler:
@@ -111,10 +113,9 @@ class Process:
                 return
 
             if instruction.op == "alts":
-                operations = instruction.data
-                result = do_alts(operations, self._continue)
-                if result:
-                    self._continue(result.value)
+                data = instruction.data
+                operations = data.operations
+                do_alts(operations, self._continue, priority=data.priority, default=data.default)
                 return
         else:
             self._continue(instruction)
@@ -154,7 +155,7 @@ def sleep(seconds):
 # TODO: Re-organize code
 
 
-def alts(operations):
+def alts(operations, priority=False, default=None):
     """Completes at most one of the specified channel operations. Each
     operation must either be a channel to take from, or a tuple of
     (channel-to-put-onto, value-to-put).
@@ -166,7 +167,7 @@ def alts(operations):
 
     value = yield alts([channel, ()])
     """
-    return Instruction("alts", operations)
+    return Instruction("alts", AltData(operations, priority, default))
 
 
 # TODO: Better doc

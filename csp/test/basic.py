@@ -4,6 +4,7 @@ from twisted.internet.defer import Deferred
 from csp.test_helpers import async
 from csp import Channel, put, take, alts, go, sleep, stop
 from csp import put_then_callback, take_then_callback
+from csp import DEFAULT
 
 
 def identity_channel(x):
@@ -115,6 +116,28 @@ class Selecting(TestCase):
         r = yield alts([ch])
         self.assertEqual(r.value, 42)
         self.assertEqual(r.channel, ch)
+
+    @async
+    def test_default_value(self):
+        ch = Channel(1)
+        r = yield alts([ch], default=42)
+        self.assertEqual(r.value, 42)
+        self.assertEqual(r.channel, DEFAULT)
+        yield put(ch, 53)
+        r = yield alts([ch], default=42)
+        self.assertEqual(r.value, 53)
+        self.assertEqual(r.channel, ch)
+
+    @async
+    def test_priority(self):
+        nums = range(50)
+        chs = [Channel(1) for _ in nums]
+        for i in nums:
+            yield put(chs[i], i)
+        values = []
+        for _ in nums:
+            values.append((yield alts(chs, priority=True)).value)
+        self.assertEqual(values, nums)
 
 
 class Goroutine(TestCase):

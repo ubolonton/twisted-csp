@@ -22,15 +22,18 @@ class AltHandler:
 
 AltResult = namedtuple("AltResult", ["value", "channel"])
 
+DEFAULT = object()
 
 # TODO: Support options
-def do_alts(operations, callback):
+def do_alts(operations, callback, priority=False, default=None):
     # XXX Hmm
     assert len(operations) > 0
     flag = [True]
-    operations = list(operations)
-    # TODO: Accept a priority function or something
-    shuffle(operations)
+
+    if not priority:
+        operations = list(operations)
+        # TODO: Accept a priority function or something
+        shuffle(operations)
 
     # XXX: Python uses function-scope not block-scope. Therefore
     # "port" is mutably shared by the iterations. The "lambda port:" trick
@@ -47,6 +50,11 @@ def do_alts(operations, callback):
             result = port.take((
                 lambda port: AltHandler(flag, lambda value: callback(AltResult(value, port)))
             )(port))
-        if result:
-            assert isinstance(result, Box)
-            return Box(AltResult(result.value, port))
+        if isinstance(result, Box):
+            callback(AltResult(result.value, port))
+            return
+
+    # FIX: What if we want to use None as the default value?
+    if default is not None and flag[0]:
+        flag[0] = False
+        callback(AltResult(default, DEFAULT))

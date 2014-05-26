@@ -2,7 +2,7 @@ from twisted.trial.unittest import TestCase
 from twisted.internet.defer import Deferred
 
 from csp.test_helpers import async
-from csp import Channel, put, take, go, sleep, stop
+from csp import Channel, put, take, alts, go, sleep, stop
 from csp import put_then_callback, take_then_callback
 
 
@@ -76,3 +76,40 @@ class Goroutine(TestCase):
         ch = go(ident, args=[42], chan=True)
         self.assertEqual((yield take(ch)), 42, "returned value is delivered")
         self.assertEqual(ch.is_closed(), True, "output channel is closed")
+
+
+class ProcessRunnerStack(TestCase):
+    import sys
+    limit = sys.getrecursionlimit()
+    ch = Channel()
+    ch.close()
+
+    @async
+    def test_taking_from_closed_channel(self):
+        i = 0
+        while i < self.limit:
+            i += 1
+            yield take(self.ch)
+
+    @async
+    def test_putting_onto_closed_channel(self):
+        i = 0
+        while i < self.limit:
+            i += 1
+            yield put(self.ch, 42)
+
+    @async
+    def test_selecting_on_closed_channel(self):
+        i = 0
+        while i < self.limit:
+            i += 1
+            yield alts([self.ch, [self.ch, 1]])
+
+    @async
+    def test_immediate_puts_and_takes(self):
+        ch = Channel(1)
+        i = 0
+        while i < self.limit:
+            i += 1
+            yield put(ch, 1)
+            yield take(ch)

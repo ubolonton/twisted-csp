@@ -1,5 +1,5 @@
 from twisted.trial.unittest import TestCase
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, inlineCallbacks
 
 from csp.test_helpers import async
 from csp import Channel, put, take, alts, go, sleep, stop
@@ -191,3 +191,153 @@ class ProcessRunnerStack(TestCase):
             i += 1
             yield put(ch, 1)
             yield take(ch)
+
+
+from csp import defer as d
+
+
+class TestDeferreds(TestCase):
+    @d.async
+    def test_parked_taken(self):
+        ch = Channel()
+        @inlineCallbacks
+        def taking():
+            yield d.sleep(0.005)
+            yield d.take(ch)
+        taking()
+        self.assertEqual((yield d.put(ch, 42)), True)
+
+    @d.async
+    def test_parked_closed(self):
+        ch = Channel()
+        @inlineCallbacks
+        def closing():
+            yield d.sleep(0.005)
+            ch.close()
+        closing()
+        self.assertEqual((yield d.put(ch, 42)), False)
+
+    @d.async
+    def test_immediate_put(self):
+        ch = Channel()
+        @inlineCallbacks
+        def putting():
+            yield d.put(ch, 42)
+        putting()
+        self.assertEqual((yield d.take(ch)), 42)
+
+
+class DeferredPutting(TestCase):
+    @d.async
+    def test_immediate_taken(self):
+        ch = Channel()
+        @inlineCallbacks
+        def taking():
+            yield d.take(ch)
+        taking()
+        self.assertEqual((yield d.put(ch, 42)), True)
+
+    @d.async
+    def test_immediate_buffered(self):
+        ch = Channel(1)
+        self.assertEqual((yield d.put(ch, 42)), True)
+
+    @d.async
+    def test_immediate_closed(self):
+        ch = Channel()
+        ch.close()
+        self.assertEqual((yield d.put(ch, 42)), False)
+
+    @d.async
+    def test_parked_taken(self):
+        ch = Channel()
+        @inlineCallbacks
+        def taking():
+            yield d.sleep(0.005)
+            yield d.take(ch)
+        taking()
+        self.assertEqual((yield d.put(ch, 42)), True)
+
+    @d.async
+    def test_parked_closed(self):
+        ch = Channel()
+        @inlineCallbacks
+        def closing():
+            yield d.sleep(0.005)
+            ch.close()
+        closing()
+        self.assertEqual((yield d.put(ch, 42)), False)
+
+
+class DeferredTaking(TestCase):
+    @d.async
+    def test_immediate_put(self):
+        ch = Channel()
+        @inlineCallbacks
+        def putting():
+            yield d.put(ch, 42)
+        putting()
+        self.assertEqual((yield d.take(ch)), 42)
+
+    @d.async
+    def test_immediate_buffered(self):
+        ch = Channel(1)
+        yield d.put(ch, 42)
+        self.assertEqual((yield d.take(ch)), 42)
+
+    @d.async
+    def test_immediate_closed(self):
+        ch = Channel()
+        ch.close()
+        self.assertEqual((yield d.take(ch)), None)
+
+    @d.async
+    def test_parked_put(self):
+        ch = Channel()
+        @inlineCallbacks
+        def putting():
+            yield d.sleep(0.005)
+            yield d.put(ch, 42)
+        putting()
+        self.assertEqual((yield d.take(ch)), 42)
+
+    @d.async
+    def test_parked_closed(self):
+        ch = Channel()
+        @inlineCallbacks
+        def closing():
+            yield d.sleep(0.005)
+            ch.close()
+        closing()
+        self.assertEqual((yield d.take(ch)), None)
+
+
+class DeferredSelecting(TestCase):
+    @d.async
+    def test_identity(self):
+        ch = identity_channel(42)
+        r = yield d.alts([ch])
+        self.assertEqual(r.value, 42)
+        self.assertEqual(r.channel, ch)
+
+    @d.async
+    def test_default_value(self):
+        ch = Channel(1)
+        r = yield d.alts([ch], default=42)
+        self.assertEqual(r.value, 42)
+        self.assertEqual(r.channel, DEFAULT)
+        yield d.put(ch, 53)
+        r = yield d.alts([ch], default=42)
+        self.assertEqual(r.value, 53)
+        self.assertEqual(r.channel, ch)
+
+    @d.async
+    def test_priority(self):
+        nums = range(50)
+        chs = [Channel(1) for _ in nums]
+        for i in nums:
+            yield d.put(chs[i], i)
+        values = []
+        for _ in nums:
+            values.append((yield d.alts(chs, priority=True)).value)
+        self.assertEqual(values, nums)

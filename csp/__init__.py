@@ -8,50 +8,56 @@ from csp.impl.select import DEFAULT
 
 import csp.impl.process
 
+from twisted.internet.defer import Deferred
+
 
 def no_op(*arg):
     pass
 
 
-def spawn(gen, chan=False):
-    """Asynchronously executes a "goroutine", which must be a generator.
-
-    If "chan" is True, returns a channel that will receive the result
-    of the goroutine when it completes.
-    """
-    # Only deliver the result to a channel if requested. Ideally I
-    # think the choice should be a call-site optimization (whether the
-    # returned channel is used). However that probably requires the
-    # construct to be built-in (I believe Clojure's core.async suffers
-    # from the same problem).
-    if chan:
-        channel = Channel(1)
-        def done(value):
-            if value is not None:
-                # TODO: Clearly define and test the differences of
-                # this vs. signaling closing right away (not after the
-                # put is done)
-                put_then_callback(channel, value, lambda ok: channel.close())
-            else:
-                channel.close()
-
-        process = csp.impl.process.Process(gen, done)
-        process.run()
-        return channel
-    else:
-        process = csp.impl.process.Process(gen)
-        process.run()
-        return
+def go(f, *args, **kwargs):
+    process = csp.impl.process.Process(f(*args, **kwargs))
+    process.run()
 
 
-def go(f, args=(), kwargs={}, chan=False):
-    """Creates and executes a "goroutine". The supplied function must be a
-    generator function.
+def go_channel(f, *args, **kwargs):
+    channel = Channel(1)
+    def done(value):
+        if value is not None:
+            # TODO: Clearly define and test the differences of
+            # this vs. signaling closing right away (not after the
+            # put is done)
+            put_then_callback(channel, value, lambda ok: channel.close())
+        else:
+            channel.close()
+    process = csp.impl.process.Process(f(*args, **kwargs), done)
+    process.run()
+    return channel
 
-    If "chan" is True, returns a channel that will receive the result
-    of the goroutine when it completes.
-    """
-    return spawn(f(*args, **kwargs), chan=chan)
+
+def go_deferred(f, *args, **kwargs):
+    d = Deferred()
+    process = csp.impl.process.Process(f(*args, **kwargs), d.callback)
+    process.run()
+    return d
+
+
+def process_channel(f):
+    def returning_channel(*args, **kwargs):
+        return go_channel(f, *args, **kwargs)
+    return returning_channel
+
+
+def process_deferred(f):
+    def returning_deferred(*args, **kwargs):
+        return go_deferred(f, *args, **kwargs)
+    return returning_deferred
+
+
+def process(f):
+    def returning(*args, **kwargs):
+        return go(f, *args, **kwargs)
+    return returning
 
 
 # For API consistency (sort of)

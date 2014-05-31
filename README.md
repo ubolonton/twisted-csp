@@ -6,7 +6,7 @@ Communicating sequential processes for Twisted. Channels like Go, or Clojurescri
 This is a very close port of Clojurescript's `core.async`. The significant difference is that light-weight processes are implemented using generators (`yield`) instead of macros.
 
 - Channel operations must happen inside "light-weight processes" (code flows, not actual threads).
-- Light-weight processes are spawn by calling `go` on generators.
+- Light-weight processes are spawn by calling `go`, `go_channel`, `go_deferred` or by using their decorator equivalents.
 - Most channel operations must follow the form of `yield do_sth(...)`.
 
 ```python
@@ -20,7 +20,7 @@ def slow_pipe(input, output):
         else:
             yield put(output, value)
 
-go(slow_pipe, [chan1, chan2]))
+go(slow_pipe, chan1, chan2))
 ```
 
 ## Examples ##
@@ -52,6 +52,7 @@ class Ball:
     hits = 0
 
 
+@process
 def player(name, table):
     while True:
         ball = yield take(table)
@@ -64,8 +65,8 @@ def player(name, table):
 def main():
     table = Channel()
 
-    go(player, ["ping", table])
-    go(player, ["pong", table])
+    player("ping", table)
+    player("pong", table)
 
     yield put(table, Ball())
     yield sleep(1)
@@ -122,8 +123,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 ...
 >>> def main():
 ...     table = Channel()
-...     go(player, ["ping", table])
-...     go(player, ["pong", table])
+...     go(player, "ping", table)
+...     go(player, "pong", table)
 ...     yield put(table, Ball())
 ...     yield sleep(1)
 ...     close(table)

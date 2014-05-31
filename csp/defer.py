@@ -47,17 +47,36 @@ def stop(value=None):
     returnValue(value)
 
 
-def go(f, args=(), kwargs={}, chan=False):
+def go_channel(f, *args, **kwargs):
     f1 = inlineCallbacks(f)
     d = f1(*args, **kwargs)
-    if chan:
-        channel = Channel(1)
-        def done(value):
-            if value is not None:
-                put_then_callback(channel, value, lambda ok: channel.close())
-            else:
-                channel.close()
-        d.addCallback(done)
-        return d
-    else:
-        return None
+    channel = Channel(1)
+    def done(value):
+        if value is not None:
+            put_then_callback(channel, value, lambda ok: channel.close())
+        else:
+            channel.close()
+    d.addCallback(done)
+    return channel
+
+
+def go_deferred(f, *args, **kwargs):
+    f1 = inlineCallbacks(f)
+    return f1(*args, **kwargs)
+
+
+go = go_deferred
+
+
+# Decorators
+
+def process_channel(f):
+    def returning_channel(*args, **kwargs):
+        return go_channel(f, *args, **kwargs)
+    return returning_channel
+
+
+process_deferred = inlineCallbacks
+
+
+process = process_deferred

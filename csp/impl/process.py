@@ -48,6 +48,8 @@ def take_then_callback(channel, callback):
 # XXX
 NONE = object()
 
+# TODO: If a Deferred is yielded it should be resolved instead of just
+# bounced back
 class Process:
 
     def __init__(self, gen, finish_callback = None):
@@ -184,8 +186,8 @@ def stop(value=None):
         yield stop("late")
 
     # Will have "early" put on it
-    chan1 = spawn(proc(True))
+    chan1 = go_channel(proc, True)
     # Will have "late" put on it
-    chan2 = spawn(proc(False))
+    chan2 = go_channel(proc, False)
     """
     return Instruction("stop", value)

@@ -1,7 +1,7 @@
 # http://talks.golang.org/2012/concurrency.slide#27
 # Multiplexing
 
-from csp import Channel, put, take, spawn
+from csp import Channel, put, take, go
 
 from .boring import boring
 
@@ -11,8 +11,8 @@ def fan_in(input1, input2):
     def collect(i):
         while True:
             yield put(c, (yield take(i)))
-    spawn(collect(input1))
-    spawn(collect(input2))
+    go(collect, input1)
+    go(collect, input2)
     return c
 
 

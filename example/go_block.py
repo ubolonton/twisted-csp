@@ -1,4 +1,4 @@
-from csp import spawn, sleep, take, stop
+from csp import go_chan, sleep, take, stop
 
 
 def lazy_echo(x):
@@ -8,10 +8,10 @@ def lazy_echo(x):
 
 
 def main():
-    chan = spawn(lazy_echo(1), chan=True)
+    chan = go_chan(lazy_echo, 1)
     print (yield take(chan))
 
-    chan = spawn(lazy_echo(2), chan=True)
+    chan = go_chan(lazy_echo, 2)
     yield sleep(1)
     print (yield take(chan))
 

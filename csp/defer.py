@@ -47,13 +47,6 @@ def stop(value=None):
     returnValue(value)
 
 
-def async(func):
-    def asynced(self):
-        d = inlineCallbacks(func)(self)
-        return d
-    return asynced
-
-
 def go(f, args=(), kwargs={}, chan=False):
     f1 = inlineCallbacks(f)
     d = f1(*args, **kwargs)

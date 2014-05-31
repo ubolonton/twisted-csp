@@ -55,6 +55,7 @@ class Putting(TestCase):
         go(closing)
         self.assertEqual((yield put(ch, 42)), False)
 
+    # http://onbeyondlambda.blogspot.com/2014/04/asynchronous-naivete.html
     def test_parked_buffered(self):
         d = Deferred()
         ch = Channel(1)
@@ -143,6 +144,18 @@ class Selecting(TestCase):
         for _ in nums:
             values.append((yield alts(chs, priority=True)).value)
         self.assertEqual(values, nums)
+
+    # TODO: This test is non-deterministic. Use random.seed maybe?
+    @async
+    def test_no_priority(self):
+        nums = range(50)
+        chs = [Channel(1) for _ in nums]
+        for i in nums:
+            yield put(chs[i], i)
+        values = []
+        for _ in nums:
+            values.append((yield alts(chs)).value)
+        self.assertNotEqual(values, nums)
 
 
 class Goroutine(TestCase):

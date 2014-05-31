@@ -1,11 +1,10 @@
 from twisted.trial.unittest import TestCase
-from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.defer import Deferred
 
+from csp import Channel, CLOSED, DEFAULT, put_then_callback, take_then_callback
+
+from csp import put, take, alts, go, go_channel, sleep, stop
 from csp import process_deferred as async
-from csp import Channel, put, take, alts, go, go_channel, sleep, stop
-from csp import put_then_callback, take_then_callback
-from csp import DEFAULT, CLOSED
-from csp import defer as d
 
 
 # FIX: Duplicate tests. There should be a single test of tests against
@@ -66,6 +65,7 @@ class Putting(TestCase):
         put_then_callback(ch, 42, inc)
         def taken(value):
             def checking():
+                # yield control so that the second put can proceed
                 yield None
                 self.assertEqual(var["count"], 2, "second (buffered) put succeeds")
                 d.callback(CLOSED)
@@ -204,136 +204,3 @@ class ProcessRunnerStack(TestCase):
             i += 1
             yield put(ch, 1)
             yield take(ch)
-
-
-class DeferredPutting(TestCase):
-    @inlineCallbacks
-    def test_immediate_taken(self):
-        ch = Channel()
-        @inlineCallbacks
-        def taking():
-            yield d.take(ch)
-        taking()
-        self.assertEqual((yield d.put(ch, 42)), True)
-
-    @inlineCallbacks
-    def test_immediate_buffered(self):
-        ch = Channel(1)
-        self.assertEqual((yield d.put(ch, 42)), True)
-
-    @inlineCallbacks
-    def test_immediate_closed(self):
-        ch = Channel()
-        ch.close()
-        self.assertEqual((yield d.put(ch, 42)), False)
-
-    @inlineCallbacks
-    def test_parked_taken(self):
-        ch = Channel()
-        @inlineCallbacks
-        def taking():
-            yield d.sleep(0.005)
-            yield d.take(ch)
-        taking()
-        self.assertEqual((yield d.put(ch, 42)), True)
-
-    @inlineCallbacks
-    def test_parked_closed(self):
-        ch = Channel()
-        @inlineCallbacks
-        def closing():
-            yield d.sleep(0.005)
-            ch.close()
-        closing()
-        self.assertEqual((yield d.put(ch, 42)), False)
-
-    def test_parked_buffered(self):
-        df = Deferred()
-        ch = Channel(1)
-        var = {"count": 0}
-        def inc(ok):
-            var["count"] += 1
-        d.put(ch, 42).addCallback(inc)
-        d.put(ch, 42).addCallback(inc)
-        def taken(value):
-            def checking():
-                yield d.sleep(0.005)
-                self.assertEqual(var["count"], 2, "second (buffered) put succeeds")
-                df.callback(None)
-            d.go(checking)
-        d.take(ch).addCallback(taken)
-        return df
-
-
-class DeferredTaking(TestCase):
-    @inlineCallbacks
-    def test_immediate_put(self):
-        ch = Channel()
-        @inlineCallbacks
-        def putting():
-            yield d.put(ch, 42)
-        putting()
-        self.assertEqual((yield d.take(ch)), 42)
-
-    @inlineCallbacks
-    def test_immediate_buffered(self):
-        ch = Channel(1)
-        yield d.put(ch, 42)
-        self.assertEqual((yield d.take(ch)), 42)
-
-    @inlineCallbacks
-    def test_immediate_closed(self):
-        ch = Channel()
-        ch.close()
-        self.assertEqual((yield d.take(ch)), CLOSED)
-
-    @inlineCallbacks
-    def test_parked_put(self):
-        ch = Channel()
-        @inlineCallbacks
-        def putting():
-            yield d.sleep(0.005)
-            yield d.put(ch, 42)
-        putting()
-        self.assertEqual((yield d.take(ch)), 42)
-
-    @inlineCallbacks
-    def test_parked_closed(self):
-        ch = Channel()
-        @inlineCallbacks
-        def closing():
-            yield d.sleep(0.005)
-            ch.close()
-        closing()
-        self.assertEqual((yield d.take(ch)), CLOSED)
-
-
-class DeferredSelecting(TestCase):
-    @inlineCallbacks
-    def test_identity(self):
-        ch = identity_channel(42)
-        r = yield d.alts([ch])
-        self.assertEqual(r.value, 42)
-        self.assertEqual(r.channel, ch)
-
-    @inlineCallbacks
-    def test_default_value(self):
-        ch = Channel(1)
-        r = yield d.alts([ch], default=42)
-        self.assertEqual(r.value, 42)
-        self.assertEqual(r.channel, DEFAULT)
-        yield d.put(ch, 53)
-        r = yield d.alts([ch], default=42)
-        self.assertEqual(r.value, 53)
-        self.assertEqual(r.channel, ch)
-
-    @inlineCallbacks
-    def test_priority(self):
-        nums = range(50)
-        chs = [Channel(1) for _ in nums]
-        for i in nums:
-            yield d.put(chs[i], i)
-        values = []
-        for _ in nums:
-            values.append((yield d.alts(chs, priority=True)).value)
-        self.assertEqual(values, nums)

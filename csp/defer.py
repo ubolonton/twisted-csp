@@ -1,3 +1,5 @@
+# Alternative deferred-based API
+
 # TODO: If we use this module do we still need Process?
 
 # TODO: errbacks are not actually used. Isn't that weird?
@@ -14,6 +16,7 @@ from csp.impl.process import take_then_callback, put_then_callback
 
 from csp.impl.select import do_alts
 from csp.impl import dispatch
+from csp.impl.channels import ManyToManyChannel as Channel
 
 
 def put(channel, value):
@@ -49,3 +52,19 @@ def async(func):
         d = inlineCallbacks(func)(self)
         return d
     return asynced
+
+
+def go(f, args=(), kwargs={}, chan=False):
+    f1 = inlineCallbacks(f)
+    d = f1(*args, **kwargs)
+    if chan:
+        channel = Channel(1)
+        def done(value):
+            if value is not None:
+                put_then_callback(channel, value, lambda ok: channel.close())
+            else:
+                channel.close()
+        d.addCallback(done)
+        return d
+    else:
+        return None

@@ -5,6 +5,7 @@ from csp import process_deferred as async
 from csp import Channel, put, take, alts, go, go_channel, sleep, stop
 from csp import put_then_callback, take_then_callback
 from csp import DEFAULT, CLOSED
+from csp import defer as d
 
 
 # FIX: Duplicate tests. There should be a single test of tests against
@@ -203,40 +204,6 @@ class ProcessRunnerStack(TestCase):
             i += 1
             yield put(ch, 1)
             yield take(ch)
-
-
-from csp import defer as d
-
-
-class TestDeferreds(TestCase):
-    @inlineCallbacks
-    def test_parked_taken(self):
-        ch = Channel()
-        @inlineCallbacks
-        def taking():
-            yield d.sleep(0.005)
-            yield d.take(ch)
-        taking()
-        self.assertEqual((yield d.put(ch, 42)), True)
-
-    @inlineCallbacks
-    def test_parked_closed(self):
-        ch = Channel()
-        @inlineCallbacks
-        def closing():
-            yield d.sleep(0.005)
-            ch.close()
-        closing()
-        self.assertEqual((yield d.put(ch, 42)), False)
-
-    @inlineCallbacks
-    def test_immediate_put(self):
-        ch = Channel()
-        @inlineCallbacks
-        def putting():
-            yield d.put(ch, 42)
-        putting()
-        self.assertEqual((yield d.take(ch)), 42)
 
 
 class DeferredPutting(TestCase):

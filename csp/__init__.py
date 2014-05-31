@@ -1,7 +1,7 @@
 # API
 from csp.impl.buffers import FixedBuffer, DroppingBuffer, SlidingBuffer
 from csp.impl.channels import ManyToManyChannel as Channel, CLOSED
-from csp.impl.process import put_then_callback, take_then_callback
+from csp.impl.channels import put_then_callback, take_then_callback
 from csp.impl.process import put, take, sleep, alts, stop
 from csp.impl.timers import timeout
 from csp.impl.select import DEFAULT
@@ -9,10 +9,6 @@ from csp.impl.select import DEFAULT
 import csp.impl.process
 
 from twisted.internet.defer import Deferred
-
-
-def no_op(*arg):
-    pass
 
 
 def go(f, *args, **kwargs):

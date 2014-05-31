@@ -2,7 +2,7 @@ from zope.interface import implements
 from collections import namedtuple
 
 from csp.impl import dispatch
-from csp.impl.interfaces import IChannel
+from csp.impl.interfaces import IChannel, IHandler
 from csp.impl.buffers import RingBuffer, FixedBuffer
 
 
@@ -188,3 +188,35 @@ class ManyToManyChannel:
             if handler.is_active():
                 callback = handler.commit()
                 dispatch.run(lambda: callback(False))
+
+
+# FIX: This is not efficient, right? Python has no "reify"
+class FnHandler:
+    implements(IHandler)
+
+    def __init__(self, f):
+        self.f = f
+
+    def is_active(self):
+        return True
+
+    def commit(self):
+        return self.f
+
+
+def put_then_callback(channel, value, callback):
+    """Puts a value on the channel, calling the supplied callback when
+    done, passing False if the channel was closed, True otherwise.
+    """
+    result = channel.put(value, FnHandler(callback))
+    if result:
+        callback(result.value)
+
+
+def take_then_callback(channel, callback):
+    """Takes from the channel, calling the supplied callback with the
+    received value when done.
+    """
+    result = channel.take(FnHandler(callback))
+    if result:
+        callback(result.value)

@@ -11,12 +11,10 @@
 
 from twisted.internet.defer import Deferred, returnValue, inlineCallbacks
 
-# TODO: These 2 should probably be in a "callback" module
-from csp.impl.process import take_then_callback, put_then_callback
-
-from csp.impl.select import do_alts
 from csp.impl import dispatch
 from csp.impl.channels import ManyToManyChannel as Channel
+from csp.impl.channels import take_then_callback, put_then_callback
+from csp.impl.select import do_alts
 
 
 def put(channel, value):

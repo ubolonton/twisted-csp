@@ -1,48 +1,12 @@
-from zope.interface import implements
-
 from collections import namedtuple
 
 from csp.impl import dispatch
-from csp.impl.interfaces import IHandler
+from csp.impl.channels import put_then_callback, take_then_callback
 from csp.impl.select import do_alts
 
 Instruction = namedtuple("Instruction", ["op", "data"])
 
 AltData = namedtuple("AltData", ["operations", "priority", "default"])
-
-
-# FIX: This is not efficient, right? Python has no "reify"
-class FnHandler:
-    implements(IHandler)
-
-    def __init__(self, f):
-        self.f = f
-
-    def is_active(self):
-        return True
-
-    def commit(self):
-        return self.f
-
-# TODO: Shouldn't these 2 (and FnHandler) be in "channels" module?
-
-
-def put_then_callback(channel, value, callback):
-    """Puts a value on the channel, calling the supplied callback when
-    done, passing False if the channel was closed, True otherwise.
-    """
-    result = channel.put(value, FnHandler(callback))
-    if result:
-        callback(result.value)
-
-
-def take_then_callback(channel, callback):
-    """Takes from the channel, calling the supplied callback with the
-    received value when done.
-    """
-    result = channel.take(FnHandler(callback))
-    if result:
-        callback(result.value)
 
 
 # XXX

@@ -19,13 +19,13 @@ def go(f, *args, **kwargs):
 def go_channel(f, *args, **kwargs):
     channel = Channel(1)
     def done(value):
-        if value is not None:
+        if value == CLOSED:
+            channel.close()
+        else:
             # TODO: Clearly define and test the differences of
             # this vs. signaling closing right away (not after the
             # put is done)
             put_then_callback(channel, value, lambda ok: channel.close())
-        else:
-            channel.close()
     process = csp.impl.process.Process(f(*args, **kwargs), done)
     process.run()
     return channel

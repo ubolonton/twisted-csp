@@ -12,7 +12,7 @@
 from twisted.internet.defer import Deferred, returnValue, inlineCallbacks
 
 from csp.impl import dispatch
-from csp.impl.channels import ManyToManyChannel as Channel
+from csp.impl.channels import ManyToManyChannel as Channel, CLOSED
 from csp.impl.channels import take_then_callback, put_then_callback
 from csp.impl.select import do_alts
 
@@ -50,10 +50,10 @@ def go_channel(f, *args, **kwargs):
     d = f1(*args, **kwargs)
     channel = Channel(1)
     def done(value):
-        if value is not None:
-            put_then_callback(channel, value, lambda ok: channel.close())
-        else:
+        if value == CLOSED:
             channel.close()
+        else:
+            put_then_callback(channel, value, lambda ok: channel.close())
     d.addCallback(done)
     return channel
 

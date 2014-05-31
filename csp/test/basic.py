@@ -4,7 +4,7 @@ from twisted.internet.defer import Deferred, inlineCallbacks
 from csp.test_helpers import async
 from csp import Channel, put, take, alts, go, go_channel, sleep, stop
 from csp import put_then_callback, take_then_callback
-from csp import DEFAULT
+from csp import DEFAULT, CLOSED
 
 
 # FIX: Duplicate tests. There should be a single test of tests against
@@ -67,7 +67,7 @@ class Putting(TestCase):
             def checking():
                 yield None
                 self.assertEqual(var["count"], 2, "second (buffered) put succeeds")
-                d.callback(None)
+                d.callback(CLOSED)
             go(checking)
         take_then_callback(ch, taken)
         return d
@@ -92,7 +92,7 @@ class Taking(TestCase):
     def test_immediate_closed(self):
         ch = Channel()
         ch.close()
-        self.assertEqual((yield take(ch)), None)
+        self.assertEqual((yield take(ch)), CLOSED)
 
     @async
     def test_parked_put(self):
@@ -110,7 +110,7 @@ class Taking(TestCase):
             yield sleep(0.005)
             ch.close()
         go(closing)
-        self.assertEqual((yield take(ch)), None)
+        self.assertEqual((yield take(ch)), CLOSED)
 
 
 class Selecting(TestCase):
@@ -160,11 +160,11 @@ class Goroutine(TestCase):
         self.assertEqual(ch.is_closed(), True, "output channel is closed")
 
     @async
-    def test_returning_None(self):
+    def test_returning_CLOSED(self):
         def ident(x):
             yield stop(x)
-        ch = go_channel(ident, None)
-        self.assertEqual((yield take(ch)), None, "None is delivered")
+        ch = go_channel(ident, CLOSED)
+        self.assertEqual((yield take(ch)), CLOSED, "CLOSED is delivered")
         self.assertEqual(ch.is_closed(), True, "output channel is closed")
 
 
@@ -318,7 +318,7 @@ class DeferredTaking(TestCase):
     def test_immediate_closed(self):
         ch = Channel()
         ch.close()
-        self.assertEqual((yield d.take(ch)), None)
+        self.assertEqual((yield d.take(ch)), CLOSED)
 
     @inlineCallbacks
     def test_parked_put(self):
@@ -338,7 +338,7 @@ class DeferredTaking(TestCase):
             yield d.sleep(0.005)
             ch.close()
         closing()
-        self.assertEqual((yield d.take(ch)), None)
+        self.assertEqual((yield d.take(ch)), CLOSED)
 
 
 class DeferredSelecting(TestCase):

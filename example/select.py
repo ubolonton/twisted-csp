@@ -1,4 +1,4 @@
-from csp import Channel, put, take, go, alts, sleep
+from csp import Channel, put, go, alts, sleep, CLOSED
 
 
 def produce(chan, value):
@@ -25,7 +25,7 @@ def main():
 
     while True:
         value, chan = yield alts(chans)
-        if value is None:
+        if value == CLOSED:
             print "time out"
             break
         else:

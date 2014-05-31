@@ -22,6 +22,9 @@ Box = namedtuple("Box", ["value"])
 # takes/puts. Should we do that?
 
 
+CLOSED = None
+
+
 class ManyToManyChannel:
     """Creates a channel with an optional buffer. If buf_or_n is a number,
     a fixed buffer of that size is created and used.
@@ -48,8 +51,8 @@ class ManyToManyChannel:
         return self.closed
 
     def put(self, value, handler):
-        if value is None:
-            raise Exception("Cannot put None on a channel.")
+        if value == CLOSED:
+            raise Exception("Cannot put csp.CLOSED on a channel.")
 
         if self.closed or not handler.is_active():
             return Box(not self.closed)
@@ -141,7 +144,7 @@ class ManyToManyChannel:
             else:
                 if self.closed:
                     handler.commit()
-                    return Box(None)
+                    return Box(CLOSED)
                 else:
                     # Periodically remove stale takes
                     if self.dirty_takes > MAX_DIRTY:
@@ -173,7 +176,7 @@ class ManyToManyChannel:
                 break
             if taker.is_active():
                 callback = taker.commit()
-                dispatch.run(lambda: callback(None))
+                dispatch.run(lambda: callback(CLOSED))
 
         # Pending puts get "channel closed"
         while True:

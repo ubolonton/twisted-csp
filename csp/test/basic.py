@@ -1,10 +1,14 @@
 from twisted.trial.unittest import TestCase
-from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.defer import Deferred, inlineCallbacks, maybeDeferred
 
 from csp.test_helpers import async
 from csp import Channel, put, take, alts, go, sleep, stop
 from csp import put_then_callback, take_then_callback
 from csp import DEFAULT
+
+
+# FIX: Duplicate tests. There should be a single test of tests against
+# 2 APIs: callback-based, deferred-based
 
 
 def identity_channel(x):
@@ -267,6 +271,23 @@ class DeferredPutting(TestCase):
             ch.close()
         closing()
         self.assertEqual((yield d.put(ch, 42)), False)
+
+    def test_parked_buffered(self):
+        df = Deferred()
+        ch = Channel(1)
+        var = {"count": 0}
+        def inc(ok):
+            var["count"] += 1
+        d.put(ch, 42).addCallback(inc)
+        d.put(ch, 42).addCallback(inc)
+        def taken(value):
+            def checking():
+                yield d.sleep(0.005)
+                self.assertEqual(var["count"], 2, "second (buffered) put succeeds")
+                df.callback(None)
+            d.go(checking)
+        d.take(ch).addCallback(taken)
+        return df
 
 
 class DeferredTaking(TestCase):

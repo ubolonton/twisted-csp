@@ -159,6 +159,14 @@ class Goroutine(TestCase):
         self.assertEqual((yield take(ch)), 42, "returned value is delivered")
         self.assertEqual(ch.is_closed(), True, "output channel is closed")
 
+    @async
+    def test_returning_None(self):
+        def ident(x):
+            yield stop(x)
+        ch = go(ident, args=[None], chan=True)
+        self.assertEqual((yield take(ch)), None, "None is delivered")
+        self.assertEqual(ch.is_closed(), True, "output channel is closed")
+
 
 class ProcessRunnerStack(TestCase):
     import sys

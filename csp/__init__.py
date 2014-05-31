@@ -28,8 +28,12 @@ def spawn(gen, chan=False):
         channel = Channel(1)
         def done(value):
             if value is not None:
-                put_then_callback(channel, value, no_op)
-            channel.close()
+                # TODO: Clearly define and test the differences of
+                # this vs. signaling closing right away (not after the
+                # put is done)
+                put_then_callback(channel, value, lambda ok: channel.close())
+            else:
+                channel.close()
 
         process = csp.impl.process.Process(gen, done)
         process.run()

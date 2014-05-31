@@ -1,7 +1,7 @@
 from twisted.trial.unittest import TestCase
 from twisted.internet.defer import Deferred, inlineCallbacks
 
-from csp.test_helpers import async
+from csp import process_deferred as async
 from csp import Channel, put, take, alts, go, go_channel, sleep, stop
 from csp import put_then_callback, take_then_callback
 from csp import DEFAULT, CLOSED

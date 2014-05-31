@@ -10,13 +10,13 @@ import csp
 
 def run_twisted_then_call(main):
     def run_main():
-        channel = csp.spawn(main(), True)
+        channel = csp.go_channel(main)
         value = yield csp.take(channel)
         print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         print "main returned", value
         reactor.stop()
 
-    reactor.callWhenRunning(lambda: csp.spawn(run_main()))
+    reactor.callWhenRunning(lambda: csp.go(run_main))
     reactor.run()
 
 

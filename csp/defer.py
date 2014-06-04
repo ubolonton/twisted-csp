@@ -54,7 +54,7 @@ def go_channel(f, *args, **kwargs):
             channel.close()
         else:
             put_then_callback(channel, value, lambda ok: channel.close())
-    d.addCallback(done)
+    d.addBoth(done)
     return channel
 
 

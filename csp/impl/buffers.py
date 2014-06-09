@@ -9,7 +9,8 @@ from csp.impl.interfaces import IBuffer
 class RingBuffer:
 
     def __init__(self, size, iterable=()):
-        self.ring = deque(iterable, size)
+        self.size = size
+        self.ring = deque(iterable, self.size)
 
     def pop(self):
         """Returns the oldest item, removing it from the buffer.
@@ -24,14 +25,15 @@ class RingBuffer:
     def unbounded_unshift(self, item):
         """Adds 1 item, extending the buffer to make place if needed.
         """
-        if len(self.ring) == self.ring.maxlen:
+        if len(self.ring) == self.size:
             self.resize()
         self.unshift(item)
 
     def resize(self):
         """Doubles the size of the buffer.
         """
-        self.ring = deque(self.ring, self.ring.maxlen * 2)
+        self.size = self.size * 2
+        self.ring = deque(self.ring, self.size)
 
     def cleanup(self, keep):
         """Removes items that do not match the specified predicate.
@@ -60,10 +62,11 @@ class FixedBuffer:
 
     def __init__(self, size):
         assert size > 0
-        self.buf = deque((), size)
+        self.size = size
+        self.buf = deque((), self.size)
 
     def is_full(self):
-        return len(self.buf) == self.buf.maxlen
+        return len(self.buf) == self.size
 
     def add(self, item):
         assert not self.is_full()
@@ -88,13 +91,14 @@ class DroppingBuffer:
 
     def __init__(self, size):
         assert size > 0
-        self.buf = deque((), size)
+        self.size = size
+        self.buf = deque((), self.size)
 
     def is_full(self):
         return False
 
     def add(self, item):
-        if len(self.buf) < self.buf.maxlen:
+        if len(self.buf) < self.size:
             return self.buf.append(item)
 
     def remove(self):
